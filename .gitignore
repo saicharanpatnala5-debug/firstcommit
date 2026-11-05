@@ -10,8 +10,16 @@ dist/
 # Scratch & research caches
 docs_cache/
 *.html
+!docs/demo/cards/*.html
 *.xml
 *.py
+
+# Video recordings (do not commit)
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.avi
 
 # Logs
 *.log

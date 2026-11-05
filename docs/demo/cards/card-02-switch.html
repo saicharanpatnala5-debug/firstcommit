@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scene 2: Switch Architecture</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0d1117;
+      color: #f0f6fc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #a371f7;
+    }
+    p {
+      font-size: 1.8rem;
+      color: #c9d1d9;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+    .flow {
+      font-family: monospace;
+      font-size: 1.5rem;
+      color: #79c0ff;
+      background: #161b22;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Why Switch Is Central</h1>
+  <p>Switch manages agent lifecycle, handles WebSocket room events, and routes agent replies without custom bridges.</p>
+  <div class="flow">Human &harr; Mattermost &harr; Switch Console &harr; Agent (Gemini) &harr; GitHub MCP</div>
+</body>
+</html>
