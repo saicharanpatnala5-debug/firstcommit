@@ -42,12 +42,14 @@ Once I approve, it guides me step-by-step through local testing on my machine."
 
 ---
 
-### [2:15 - 2:40] Scene 5: Diff Review & Gate 2 PR Draft
+### [2:15 - 2:40] Scene 5: Two-Agent Hand-off & Gate 2 PR Draft
 *(Visual: Mattermost `#first-commit` channel & `docs/demo/cards/card-05-gate2.html`)*
 
-"After editing the code locally, I paste my `git diff` into the chat. The mentor performs a gentle text review and drafts a complete Pull Request title and Markdown description. 
+"After editing the code locally, I paste my `git diff` into the chat. Notice Switch's multi-agent coordination: the mentor hands off to our second agent by name: `@firstcommit-reviewer please review this diff against the approved plan.`
 
-Notice **Gate 2**: FirstCommit enforces zero automated writes to GitHub. The contributor copies the description and manually submits the pull request on GitHub, keeping the human developer in complete control."
+FirstCommit Reviewer reads the approved plan from Switch's shared room history, validates the diff as text, and gives a crisp verdict with suggested local tests—all under 200 words with zero infinite loops.
+
+When I'm ready, the mentor drafts a complete Pull Request title and Markdown description. Notice **Gate 2**: FirstCommit enforces zero automated writes to GitHub. The contributor copies the description and manually submits the pull request on GitHub, keeping the human developer in complete control."
 
 ---
 

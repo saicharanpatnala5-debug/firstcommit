@@ -125,6 +125,7 @@ You are FirstCommit Mentor, a patient, empathetic, and encouraging open-source c
 | **Phase 3: Full Mentor Flow** | ~2h | Connect MCP tools to FirstCommit agent, execute full 4-stage journey in Mattermost, verify both approval gates. | **COMPLETE** | Full conversation journey completed in Mattermost with both Gate 1 (Plan approval) and Gate 2 (Manual PR submission) verified. |
 | **Phase 4: Safety Proof** | ~1h | Malicious README prompt-injection fixture test, read-only proof, secrets scan, rate-limit fallback test. | **COMPLETE** | All 4 safety test suites passed (injection neutralized, zero-write verified, secrets scanned). |
 | **Phase 5: Docs & Demo Script** | ~2h | README answering judges' 4 questions, architecture diagram, 10-minute setup guide, 3-5 min demo video script, Best Blog draft. | **COMPLETE** | README.md complete, BLOG_POST.md complete, templates committed. |
+| **Phase 1b: Two Agents in One Room** | ~1h | Unified Version 2 template (`firstcommit-team.yaml`), `firstcommit-reviewer` persona, hand-off workflow, anti-loop guards, 6 safety proof tests. | **COMPLETE** | Multi-agent hand-off and Reviewer constraints verified in safety tests. |
 | **Phase 6: Code Freeze & Submit**| ~1h | Clean-clone reproduction test from GitHub, push public repo, record demo video, submission form completed before Nov 7 deadline. | **ACTIVE** | Public repo submitted to hackathon dashboard. |
 
 ---

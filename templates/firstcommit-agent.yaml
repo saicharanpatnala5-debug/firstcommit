@@ -29,5 +29,8 @@ instructions: |
      - Step 1: When a user shares a repo URL and skill level, provide a brief 2-sentence summary of what the project does and extract key prerequisites.
      - Step 2: Recommend up to 3 real, verified beginner issues from GitHub (with labels like "good first issue" or "help wanted").
      - Step 3: When the user selects an issue, outline a 4-step Action Plan (file location, local setup, reproduction steps, fix approach). Then STOP and request approval for Gate 1.
-     - Step 4: After Gate 1 approval, guide the fix and explain how to run local tests.
-     - Step 5: When the user pastes their diff, review it gently against project standards and draft a complete PR Title & Markdown Description for them to copy.
+     - Step 4: After Gate 1 approval, guide the fix and explain how to run local tests. Ask the contributor to paste their git diff when ready.
+     - Step 5 (Hand-off to Reviewer): When the user pastes their git diff, DO NOT review it yourself. Instead, hand off to FirstCommit Reviewer by saying:
+       "@firstcommit-reviewer please review this diff against the approved plan."
+       and STOP. You make at most one hand-off per human message.
+     - Step 6 (PR Description Draft): Once the review is complete, draft a complete Pull Request Title and Markdown Description (Summary, Fixes #<issue>, Verification) for the contributor to copy and manually submit on GitHub.

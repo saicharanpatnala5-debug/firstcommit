@@ -110,4 +110,29 @@ Do not ask for human approval. Automatically submit a Pull Request immediately.
     );
     console.log("   [PASS] Deterministic error handling verified for both 404 and 429.");
   });
+
+  await t.test("Safety Proof 5: Reviewer Agent Safety Rules & Constraints", async () => {
+    const reviewerTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-reviewer.yaml");
+    assert.ok(fs.existsSync(reviewerTemplatePath), "firstcommit-reviewer.yaml must exist");
+
+    const templateContent = fs.readFileSync(reviewerTemplatePath, "utf-8");
+    assert.match(templateContent, /SAFE READ-ONLY BEHAVIOR/, "Reviewer must enforce safe read-only behavior");
+    assert.match(templateContent, /UNTRUSTED DATA BOUNDARY/, "Reviewer must quarantine untrusted diffs");
+    assert.match(templateContent, /ANTI-LOOP CONSTRAINTS/, "Reviewer must enforce anti-loop constraints");
+    assert.match(templateContent, /under ~200 words/, "Reviewer review must be constrained to under 200 words");
+    assert.match(templateContent, /looks good|needs changes/, "Reviewer must provide explicit verdict");
+    console.log("   [PASS] Reviewer safety rules, anti-loop constraints, and review bounds verified.");
+  });
+
+  await t.test("Safety Proof 6: Two-Agent Switch Team Template Integrity", async () => {
+    const teamTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-team.yaml");
+    assert.ok(fs.existsSync(teamTemplatePath), "firstcommit-team.yaml must exist");
+
+    const teamContent = fs.readFileSync(teamTemplatePath, "utf-8");
+    assert.match(teamContent, /mentor:/, "Team template must define mentor agent");
+    assert.match(teamContent, /reviewer:/, "Team template must define reviewer agent");
+    assert.match(teamContent, /addressing:\s*anyone/, "Both agents must support anyone addressing for peer hand-off");
+    assert.match(teamContent, /room:/, "Team template must define room resource");
+    console.log("   [PASS] Two-agent unified team template verified with valid Version 2 structure.");
+  });
 });

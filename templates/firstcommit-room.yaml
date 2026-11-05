@@ -1,5 +1,5 @@
 name: FirstCommit Onboarding Room
-description: An open-source contribution room where first-time contributors and mentors collaborate inside Mattermost via Switch.
+description: An open-source contribution room where first-time contributors, an onboarding mentor, and a code reviewer collaborate inside Mattermost via Switch.
 messaging_app: mattermost
 channel:
   name: first-commit
@@ -9,11 +9,15 @@ channel:
 agents:
   - name: firstcommit-mentor
     role: "Contribution Mentor"
+  - name: firstcommit-reviewer
+    role: "Code Reviewer"
 
 shared_context:
   instructions: |
     Welcome contributors to the project. Ensure every contributor feels encouraged and supported.
-    All code actions are executed locally by the human developer. The mentor provides guidance and review.
+    All code actions and git commands are executed locally by the human developer.
+    - The mentor (@firstcommit-mentor) guides repository overview, issue selection, and action planning.
+    - The reviewer (@firstcommit-reviewer) performs text-only code diff reviews and suggests local tests.
   documents:
     - title: "First-Time Contributor Standards"
       content: |
@@ -23,11 +27,9 @@ shared_context:
         4. Maintain respectful, constructive collaboration at all times.
 
 kickoff_message: |
-  👋 Welcome to **FirstCommit**! I'm your open-source contribution mentor.
+  👋 Welcome to **FirstCommit**! We are your open-source onboarding pair.
   
-  Ready to make your first open-source contribution? 
-  Just share:
-  1. A public GitHub repository link (e.g. `https://github.com/sandbox-quantum/switch` or `https://github.com/pallets/click`)
-  2. Your programming language and experience level
+  - **@firstcommit-mentor**: Recommends beginner issues, breaks them down, and creates 4-step action plans.
+  - **@firstcommit-reviewer**: Inspects your code diffs against the approved plan and suggests local tests.
   
-  Mention me anytime with `@firstcommit-mentor` and let's get started! 🚀
+  To begin, mention `@firstcommit-mentor` with a public GitHub repo URL and your skill level! 🚀

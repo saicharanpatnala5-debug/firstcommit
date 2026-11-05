@@ -35,40 +35,51 @@ sequenceDiagram
     actor Contributor as Beginner Developer
     participant Mattermost as Mattermost (#first-commit)
     participant Switch as Switch Platform (Console & Relay)
-    participant Agent as FirstCommit Mentor (Antigravity / Gemini)
+    participant Mentor as FirstCommit Mentor (Gemini)
+    participant Reviewer as FirstCommit Reviewer (Gemini)
     participant GitHubTools as Read-Only GitHub MCP Server
     participant GitHub as api.github.com
 
     Note over Contributor,Mattermost: 1. Onboarding & Repo Inspection
     Contributor->>Mattermost: @firstcommit-mentor I want to contribute to sandbox-quantum/switch!
     Mattermost->>Switch: Event forwarded via WebSocket
-    Switch->>Agent: ACP session prompt with room context
-    Agent->>GitHubTools: fetch_repo_overview & fetch_open_issues (labels: hackathon)
+    Switch->>Mentor: ACP session prompt with room context
+    Mentor->>GitHubTools: fetch_repo_overview & fetch_open_issues
     GitHubTools->>GitHub: GET api.github.com (Read-only)
     GitHub-->>GitHubTools: Repo metadata & issues (stars, language, topics)
-    GitHubTools-->>Agent: Quarantined data in <untrusted_repo_data>
-    Agent->>Switch: post_message (ops/post_message)
+    GitHubTools-->>Mentor: Quarantined data in <untrusted_repo_data>
+    Mentor->>Switch: post_message (ops/post_message)
     Switch-->>Mattermost: Mentor response: repo overview + 3 recommended beginner issues
 
     Note over Contributor,Mattermost: 2. Issue Selection & Action Plan
     Contributor->>Mattermost: @firstcommit-mentor I pick #842
-    Switch->>Agent: Delivers issue selection
-    Agent->>GitHubTools: fetch_issue_detail(#842)
-    GitHubTools-->>Agent: Issue description & discussion
-    Agent->>Switch: post_message: 4-step Action Plan + GATE 1 Prompt
+    Switch->>Mentor: Delivers issue selection
+    Mentor->>GitHubTools: fetch_issue_detail(#842)
+    GitHubTools-->>Mentor: Issue description & discussion
+    Mentor->>Switch: post_message: 4-step Action Plan + GATE 1 Prompt
     Switch-->>Mattermost: Action Plan: "Reply '@firstcommit-mentor approve plan' to proceed."
 
     Note over Contributor,Mattermost: GATE 1: Human Plan Approval
     Contributor->>Mattermost: @firstcommit-mentor approve plan
-    Switch->>Agent: Delivers approval
-    Agent->>Switch: Step-by-step local setup, reproduction commands, and test guide
+    Switch->>Mentor: Delivers approval
+    Mentor->>Switch: Step-by-step local setup, reproduction commands, and test guide
     Switch-->>Mattermost: Mentor instructions: "Make changes locally and paste git diff"
 
-    Note over Contributor,Mattermost: 3. Local Coding & Text Review
+    Note over Contributor,Mattermost: 3. Local Coding, Hand-off & Text Review
     Contributor->>Contributor: Edits code locally and runs tests on own machine
     Contributor->>Mattermost: @firstcommit-mentor here is my git diff for review: [pastes diff]
-    Switch->>Agent: Delivers diff text
-    Agent->>Switch: Diff text review + Drafted PR Title and Markdown Description
+    Switch->>Mentor: Delivers diff text
+    Note over Mentor,Switch: Mentor hands off to Reviewer by name
+    Mentor->>Switch: post_message: "@firstcommit-reviewer please review this diff against the approved plan."
+    Switch-->>Mattermost: "@firstcommit-reviewer please review this diff against the approved plan."
+    Switch->>Reviewer: Event delivered to Reviewer with room history & diff
+    Reviewer->>Switch: Text-only code review (<200 words, verdict, 3 points, 2 tests)
+    Switch-->>Mattermost: Reviewer verdict: looks good + observations + suggested tests
+
+    Note over Contributor,Mattermost: 4. PR Draft Generation
+    Contributor->>Mattermost: @firstcommit-mentor draft my PR description
+    Switch->>Mentor: Delivers PR draft request
+    Mentor->>Switch: PR title & Markdown description with manual copy instructions
     Switch-->>Mattermost: GATE 2: "PR draft ready! Review and submit manually on GitHub."
 
     Note over Contributor,GitHub: GATE 2: Contributor Manual Submission
@@ -83,22 +94,27 @@ sequenceDiagram
 
 | Name | Provider | Working Folder | Addressing | Job | Template File |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `@firstcommit-mentor` | Empathetic contributor onboarding, live issue recommendation, action plan formulation, diff review, and PR description generation | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
+| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Empathetic contributor onboarding, live issue recommendation, 4-step action plan formulation, hand-off to reviewer, and PR description generation | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
+| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words) | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
 
-> **Why One Agent:** The MVP prioritizes an airtight, reliable single-agent flow that executes live without fragile inter-agent race conditions. One agent (`firstcommit-mentor`); a dedicated Reviewer agent is future work.
+> **Unified Multi-Agent Template:** Both agents and the room can also be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
+>
+> **Why Two Agents in One Room:** Separating onboarding mentorship from code review reflects real engineering team dynamics. The Mentor focuses on encouragement, repo orientation, and issue decomposition. The Reviewer serves as an objective quality and scope gate. By deploying both in one Switch room, the Mentor hands off review to the Reviewer by name (`@firstcommit-reviewer`), and the Reviewer evaluates the diff against the plan stored in Switch's shared room history without requiring separate custom pipelines. Anti-loop rules ensure agents only speak when addressed and never enter recursive ping-pong loops.
 
 ### b. Channel & Room Setup
 
-- **Room Name:** `FirstCommit Room` (auto-bridged to channel `#first-commit`)
+- **Room Name:** `FirstCommit Onboarding Room` (auto-bridged to channel `#first-commit`)
 - **Chat Application:** Mattermost (bundled inside the local Switch Docker stack: `switchdash-local-mattermost-mattermost-1` on port `60922`)
 - **Bridge:** Native Switch Mattermost Collaboration Bridge
 - **Participants & Roles:**
   - `charan7` (Workspace Owner / Contributor)
-  - `firstcommit-mentor` (AI Agent / Onboarding Mentor)
-- **Kickoff Message:** `"Hey! Ping @firstcommit-mentor and I'll jump in."`
+  - `firstcommit-mentor` (AI Agent / Contribution Mentor)
+  - `firstcommit-reviewer` (AI Agent / Code Reviewer)
+- **Kickoff Message:** `"👋 Welcome to FirstCommit! We are your open-source onboarding pair. Mention @firstcommit-mentor with a public repo URL to get started!"`
 - **Native Switch Room Features Used:**
-  - **Shared Context & Room Instructions:** Injected into the agent session to govern mentor personality, step-by-step teaching style, and safety boundaries.
-  - **Roles:** Mentor role assigned to `firstcommit-mentor`.
+  - **Shared Context & Room Instructions:** Injected into agent sessions to govern mentor personality, teaching style, reviewer brevity, and safety boundaries.
+  - **Roles:** Dedicated roles assigned per agent (`Contribution Mentor` for Mentor, `Code Reviewer` for Reviewer).
+  - **Room Addressing & Mentions:** Uses Switch's `addressing: anyone` policy allowing both the human and peer agents to route work via `@mentions`.
   - **Decisions & Approval Gates:** Chat-based human confirmation gates preventing premature code guidance or unauthorized actions.
 
 ### c. Human Approval Gates
@@ -110,7 +126,7 @@ FirstCommit enforces two strict human-in-the-loop approval gates where execution
    - **Exact Approval Phrase:** `@firstcommit-mentor approve plan` (or simply `approve plan`).
    - **Enforcement:** The mentor will **not** provide code locations, reproduction commands, or implementation steps until the contributor reviews and approves the plan.
 2. **Gate 2: Contributor Manual Pull Request Submission**
-   - **Where:** In the chat thread, following the contributor's pasted `git diff` and the mentor's text review.
+   - **Where:** In the chat thread, following the code diff review and the mentor's PR description draft.
    - **Enforcement:** FirstCommit performs **zero automated GitHub writes** (no branch creation, no commits, no automated PR submission). The agent drafts a complete PR title and Markdown description, and explicitly directs the contributor to review, copy, and submit the PR manually on GitHub.
 
 ---
@@ -166,8 +182,9 @@ cp .env.example .env
 2. Navigate to **Settings -> Agent Providers** and confirm **Antigravity** is marked as `Signed in` / `Installed`.
 3. In Switch Console, click **Start Server** on the local server card (or verify Docker container `switchdash-local-mattermost-mattermost-1` is running).
 4. Click **Connectors -> Mattermost** and verify the connection is active.
-5. In Switch Console, navigate to **Agents**, click **+ New Agent**, select **From Template**, and select `templates/firstcommit-agent.yaml`.
-6. Navigate to **Rooms**, select the bridged `#first-commit` channel, and ensure `firstcommit-mentor` is added to the room.
+5. In Switch Console, deploy the two agents and room:
+   - **Option A (Unified Template):** Go to **Templates**, click **+ New Template**, load `templates/firstcommit-team.yaml`, and click **Run**.
+   - **Option B (Individual Templates):** Go to **Agents**, import `templates/firstcommit-agent.yaml` and `templates/firstcommit-reviewer.yaml`, then add both agents to the `#first-commit` channel room.
 
 ---
 
@@ -192,6 +209,7 @@ cp .env.example .env
 | **Bot replied `**Worked for Xs.**` with no text** | The session turn completion card was updating, but room messages in Switch must be dispatched via `post_message`. | Configured the ACP adapter to invoke Switch's embedded Relay API (`POST /agents/{agentId}/ops/post_message`) with the active room placement session header `x-switch-session-id`. |
 | **`thread_id not found in room` error** | Attempting to reply to an unindexed message ID. | Added automatic fallback in `antigravity-acp.js` to post as a top-level channel message if thread normalization fails. |
 | **Unit test blocked absolute URLs** | `fetchGitHub` formed URL via `https://api.github.com/${path}`, allowing an absolute path like `/https://evil.com`. | Added strict URL parsing in `github.ts` that rejects any input containing `://` or protocol prefixes. |
+| **Potential agent ping-pong loop** | When multiple agents share a room, an agent may misinterpret peer acknowledgements as new instructions. | Implemented strict anti-loop guards in `antigravity-acp.js` ensuring agents only speak when addressed, make at most one hand-off per message, and ignore peer acknowledgements. |
 
 **Tested on:** Windows 11 Pro, November 5, 2026.
 
@@ -205,6 +223,8 @@ cp .env.example .env
 3. **Prompt Injection Quarantine:** Untrusted repository contents (README files, issue descriptions, user diffs) are wrapped inside `<untrusted_repo_data>` blocks with system-level quarantine instructions to prevent prompt injection attacks.
 4. **Leak-Proof Secrets:** All sensitive credentials are kept in gitignored local files. Automated safety tests scan for token leaks in logs, mock fixtures, and template files.
 5. **Rate-Limit & Truncation Guards:** Responses from GitHub are cached in-memory for 10 minutes and capped at 30,000 characters to prevent buffer overflow and token exhaustion.
+6. **Anti-Loop Constraints:** An agent speaks only when addressed by name or by a human, makes at most one hand-off per human message, and never replies to another agent's acknowledgement.
+7. **Static Text-Only Code Review:** The Reviewer agent operates strictly on text, never executes code, limits reviews to under 200 words with explicit verdict and test recommendations, and checks against the human-approved plan.
 
 ### Limitations (MVP Scope)
 - **Public Repositories Only:** Private repository support requires authenticated GitHub OAuth integration, which is omitted in the MVP to minimize credential exposure.

@@ -63,9 +63,9 @@
 
 ---
 
-### Scene 5 [2:15 - 2:40] Diff Review & GATE 2 PR Draft
+### Scene 5 [2:15 - 2:45] Two-Agent Hand-off, Diff Review & GATE 2 PR Draft
 - **Visual:** Same Mattermost thread.
-- **Action (Exact Message to Type):**
+- **Action 1 (Contributor pastes diff to Mentor):**
   ```text
   @firstcommit-mentor here is my git diff for review:
   ```
@@ -88,12 +88,22 @@
   +    async def test_connection(self) -> bool:
   +        return True
   ```
-- **Expected Agent Reply:**
-  - Performs a constructive text review of the diff.
+- **Expected Mentor Reply (Hand-off by Name):**
+  `@firstcommit-reviewer please review this diff against the approved plan.`
+- **Expected Reviewer Reply (Static Review & Suggested Tests):**
+  - **Verdict:** `looks good`
+  - **Observations:** Confirms scope matches the approved plan, notes clean typing and zero out-of-scope edits.
+  - **Suggested Tests:** Suggests running `pytest tests/connectors/test_intercom.py -v`.
+  - Stays under 200 words and stops (no agent ping-pong loop).
+- **Action 2 (Contributor requests PR draft):**
+  ```text
+  @firstcommit-mentor draft my PR description
+  ```
+- **Expected Mentor Reply (GATE 2 PR Draft):**
   - Generates ready-to-use Pull Request Title: `feat(connectors): add Intercom connector implementation (#842)`.
   - Generates ready-to-use Markdown PR description.
   - **GATE 2**: Instructs the contributor to copy and submit manually on GitHub (enforcing zero automated bot writes).
-- **Switch Point Proved:** Quality gate protecting maintainers while keeping the human in full control.
+- **Switch Point Proved:** Multi-agent collaboration in one room: Switch routes the hand-off between Mentor and Reviewer by name, while shared room history provides instant context without custom plumbing.
 
 ---
 
