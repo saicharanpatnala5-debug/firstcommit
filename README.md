@@ -129,7 +129,7 @@ FirstCommit enforces two strict human-in-the-loop approval gates where execution
 #### 1. Clone the Repository & Build MCP Tools
 Open PowerShell and run:
 ```powershell
-git clone https://github.com/saicharanpatnala/FirstCommit.git
+git clone https://github.com/saicharanpatnala5-debug/firstcommit.git
 cd FirstCommit\mcp-server
 npm install
 npm run build

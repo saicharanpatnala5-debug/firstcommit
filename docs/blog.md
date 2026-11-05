@@ -3,7 +3,7 @@
 **Author:** Sai Charan  
 **Track:** Best Business Workflow (+ Best Blog Post)  
 **Hackathon:** Flip the Switch Hackathon (WeMakeDevs & SandboxAQ)  
-**Repository:** [github.com/saicharanpatnala/FirstCommit](https://github.com/saicharanpatnala/FirstCommit)  
+**Repository:** [github.com/saicharanpatnala5-debug/firstcommit](https://github.com/saicharanpatnala5-debug/firstcommit)  
 
 ---
 
@@ -72,6 +72,6 @@ Over 70% of junior developers abandon their first open-source PR due to intimida
 • 100% safe read-only MCP architecture with prompt injection defense
 • Zero custom bridges: fully orchestrated by Switch Console
 
-Check out the project: https://github.com/saicharanpatnala/FirstCommit
+Check out the project: https://github.com/saicharanpatnala5-debug/firstcommit
 #HowISwitch #FlipTheSwitch #OpenSource #AI #WeMakeDevs #BuildInPublic
 ```
