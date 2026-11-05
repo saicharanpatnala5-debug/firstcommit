@@ -1,0 +1,28 @@
+# Environment & Secrets
+.env
+.env.local
+*.env
+
+# Dependencies
+node_modules/
+dist/
+
+# Scratch & research caches
+docs_cache/
+*.html
+*.xml
+*.py
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS metadata
+.DS_Store
+Thumbs.db

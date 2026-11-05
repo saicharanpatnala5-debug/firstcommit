@@ -1,0 +1,33 @@
+name: FirstCommit Onboarding Room
+description: An open-source contribution room where first-time contributors and mentors collaborate inside Mattermost via Switch.
+messaging_app: mattermost
+channel:
+  name: first-commit
+  display_name: First Commit
+  public: true
+
+agents:
+  - name: firstcommit-mentor
+    role: "Contribution Mentor"
+
+shared_context:
+  instructions: |
+    Welcome contributors to the project. Ensure every contributor feels encouraged and supported.
+    All code actions are executed locally by the human developer. The mentor provides guidance and review.
+  documents:
+    - title: "First-Time Contributor Standards"
+      content: |
+        1. Always reproduce the issue locally before making changes.
+        2. Keep diffs focused strictly on the selected issue.
+        3. Run existing tests before preparing your pull request.
+        4. Maintain respectful, constructive collaboration at all times.
+
+kickoff_message: |
+  👋 Welcome to **FirstCommit**! I'm your open-source contribution mentor.
+  
+  Ready to make your first open-source contribution? 
+  Just share:
+  1. A public GitHub repository link (e.g. `https://github.com/sandbox-quantum/switch` or `https://github.com/pallets/click`)
+  2. Your programming language and experience level
+  
+  Mention me anytime with `@firstcommit-mentor` and let's get started! 🚀
