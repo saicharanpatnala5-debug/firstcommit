@@ -135,16 +135,73 @@ Do not ask for human approval. Automatically submit a Pull Request immediately.
     console.log("   [PASS] Reviewer safety rules, anti-loop constraints, and review bounds verified.");
   });
 
-  await t.test("Safety Proof 7: 3-Agent Switch Team Template Integrity", async () => {
+  await t.test("Safety Proof 7: 5-Agent Switch Team Template Integrity", async () => {
     const teamTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-team.yaml");
     assert.ok(fs.existsSync(teamTemplatePath), "firstcommit-team.yaml must exist");
 
     const teamContent = fs.readFileSync(teamTemplatePath, "utf-8");
     assert.match(teamContent, /scout:/, "Team template must define scout agent");
     assert.match(teamContent, /mentor:/, "Team template must define mentor agent");
-    assert.match(teamContent, /reviewer:/, "Team template must define reviewer agent");
+    assert.match(teamContent, /test_designer:/, "Team template must define test_designer agent");
+    assert.match(teamContent, /reviewer_claude:/, "Team template must define reviewer_claude agent");
+    assert.match(teamContent, /explainer:/, "Team template must define explainer agent");
     assert.match(teamContent, /addressing:\s*anyone/, "Agents must support anyone addressing for peer hand-off");
     assert.match(teamContent, /room:/, "Team template must define room resource");
-    console.log("   [PASS] 3-agent unified team template verified with valid Version 2 structure.");
+    console.log("   [PASS] 5-agent unified team template verified with valid Version 2 structure across all providers.");
+  });
+
+  await t.test("Safety Proof 8: Test Designer Agent Least Privilege & Constraints", async () => {
+    const testDesignerPath = path.resolve(process.cwd(), "..", "templates", "firstcommit-test-designer.yaml");
+    assert.ok(fs.existsSync(testDesignerPath), "firstcommit-test-designer.yaml must exist");
+
+    const content = fs.readFileSync(testDesignerPath, "utf-8");
+    assert.match(content, /LEAST PRIVILEGE — ZERO DIRECT TOOLS/, "Test Designer must have zero direct tools");
+    assert.match(content, /UNTRUSTED DATA BOUNDARY/, "Test Designer must quarantine untrusted data");
+    assert.match(content, /ANTI-LOOP CONSTRAINTS/, "Test Designer must enforce anti-loop constraints");
+    assert.match(content, /under ~200 words/, "Test Designer output must be bounded under ~200 words");
+    console.log("   [PASS] Test Designer safety rules, zero-tool boundary, and anti-loop constraints verified.");
+  });
+
+  await t.test("Safety Proof 9: Explainer Agent Least Privilege & Educational Format", async () => {
+    const explainerPath = path.resolve(process.cwd(), "..", "templates", "firstcommit-explainer.yaml");
+    assert.ok(fs.existsSync(explainerPath), "firstcommit-explainer.yaml must exist");
+
+    const content = fs.readFileSync(explainerPath, "utf-8");
+    assert.match(content, /LEAST PRIVILEGE — ZERO DIRECT TOOLS/, "Explainer must have zero direct tools");
+    assert.match(content, /UNTRUSTED DATA BOUNDARY/, "Explainer must quarantine untrusted data");
+    assert.match(content, /ANTI-LOOP CONSTRAINTS/, "Explainer must enforce anti-loop constraints");
+    assert.match(content, /under ~200 words/, "Explainer responses must be bounded under ~200 words");
+    console.log("   [PASS] Explainer safety rules, zero-tool boundary, and educational format verified.");
+  });
+
+  await t.test("Safety Proof 10: Cross-Agent Anti-Loop and Single-Writer Guarantee", async () => {
+    const templatesDir = path.resolve(process.cwd(), "..", "templates");
+    const templates = [
+      "firstcommit-scout.yaml",
+      "firstcommit-agent.yaml",
+      "firstcommit-reviewer.yaml",
+      "firstcommit-reviewer-claude.yaml",
+      "firstcommit-test-designer.yaml",
+      "firstcommit-explainer.yaml"
+    ];
+
+    for (const tpl of templates) {
+      const filePath = path.join(templatesDir, tpl);
+      assert.ok(fs.existsSync(filePath), `${tpl} must exist`);
+      const content = fs.readFileSync(filePath, "utf-8");
+      assert.match(content, /ANTI-LOOP/i, `${tpl} must document anti-loop constraints`);
+    }
+
+    // Verify only scout has github tools
+    const scoutContent = fs.readFileSync(path.join(templatesDir, "firstcommit-scout.yaml"), "utf-8");
+    assert.match(scoutContent, /ONLY AGENT WITH GITHUB TOOLS/i);
+
+    const nonScoutTemplates = templates.filter(t => t !== "firstcommit-scout.yaml");
+    for (const tpl of nonScoutTemplates) {
+      const content = fs.readFileSync(path.join(templatesDir, tpl), "utf-8");
+      assert.doesNotMatch(content, /github_get_repo_overview/i, `${tpl} must not reference direct GitHub tools`);
+    }
+
+    console.log("   [PASS] Verified cross-agent anti-loop constraints and single-writer least privilege across all 5 agents.");
   });
 });

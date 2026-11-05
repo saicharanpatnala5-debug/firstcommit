@@ -35,9 +35,11 @@ sequenceDiagram
     actor Contributor as Beginner Developer
     participant Mattermost as Mattermost (#first-commit)
     participant Switch as Switch Platform (Console & Relay)
-    participant Scout as FirstCommit Scout (Gemini)
-    participant Mentor as FirstCommit Mentor (Gemini)
-    participant Reviewer as FirstCommit Reviewer (Gemini)
+    participant Scout as FirstCommit Scout (Gemini 2.5 Flash)
+    participant Mentor as FirstCommit Mentor (Gemini 2.5 Flash)
+    participant TestDesigner as Test Designer (OpenAI GPT-4o)
+    participant Reviewer as Reviewer (Claude Haiku 4.5)
+    participant Explainer as Explainer (Meta Llama 3.3)
     participant GitHubTools as Read-Only GitHub MCP Server
     participant GitHub as api.github.com
 
@@ -62,20 +64,30 @@ sequenceDiagram
     Contributor->>Mattermost: @firstcommit-mentor approve plan
     Switch->>Mentor: Delivers approval
     Mentor->>Switch: Step-by-step local setup, reproduction commands, and test guide
-    Switch-->>Mattermost: Mentor instructions: "Make changes locally and paste git diff"
+    Switch-->>Mattermost: Mentor instructions: "Make changes locally and test"
 
-    Note over Contributor,Mattermost: 3. Local Coding, Hand-off & Reviewer Inspection
+    Note over Contributor,Mattermost: 3. Test Design & Concept Demystification (GPT-4o & Llama 3.3)
+    Contributor->>Mattermost: @firstcommit-test-designer what test cases should I create for #842?
+    Switch->>TestDesigner: Delivers test query (GPT-4o reads room context)
+    TestDesigner->>Switch: 2-3 test cases + local pytest command (<200 words)
+    Switch-->>Mattermost: Test Designer: Happy-path & edge-case test suite recommendations
+    Contributor->>Mattermost: @firstcommit-explainer what does git rebase do?
+    Switch->>Explainer: Delivers concept query (Llama 3.3 reads room context)
+    Explainer->>Switch: Plain-English explanation + analogy + command (<200 words)
+    Switch-->>Mattermost: Explainer: Real-world analogy and clean rebase command
+
+    Note over Contributor,Mattermost: 4. Local Coding, Cross-Model Hand-off & Review (Claude Haiku)
     Contributor->>Contributor: Edits code locally and runs tests on own machine
     Contributor->>Mattermost: @firstcommit-mentor here is my git diff for review: [pastes diff]
     Switch->>Mentor: Delivers diff text
-    Note over Mentor,Switch: Mentor hands off to Reviewer by name
-    Mentor->>Switch: post_message: "@firstcommit-reviewer please review this diff against the approved plan."
-    Switch-->>Mattermost: "@firstcommit-reviewer please review this diff against the approved plan."
+    Note over Mentor,Switch: Mentor hands off to Reviewer Claude by name
+    Mentor->>Switch: post_message: "@firstcommit-reviewer-claude please review this diff against the approved plan."
+    Switch-->>Mattermost: "@firstcommit-reviewer-claude please review this diff against the approved plan."
     Switch->>Reviewer: Event delivered to Reviewer with room history & diff
-    Reviewer->>Switch: Text-only review (<200 words, verdict, 3 points, 2 tests)
+    Reviewer->>Switch: Cross-model review (<200 words, verdict, 3 points, 2 tests)
     Switch-->>Mattermost: Reviewer verdict: looks good + observations + suggested tests
 
-    Note over Contributor,Mattermost: 4. PR Draft Generation
+    Note over Contributor,Mattermost: 5. PR Draft Generation
     Contributor->>Mattermost: @firstcommit-mentor draft my PR description
     Switch->>Mentor: Delivers PR draft request
     Mentor->>Switch: PR title & Markdown description with manual copy instructions
@@ -89,22 +101,35 @@ sequenceDiagram
 
 ## 3. How Switch Is Used
 
-### a. Agents Connected
+### a. Agents Connected & Multi-Provider Architecture
 
-| Name | Provider | Working Folder | Addressing | Job | Template File |
+FirstCommit demonstrates that **Switch is a truly agent-agnostic collaboration fabric**: five specialist agents across **four distinct frontier model families** (Google Gemini, OpenAI GPT, Anthropic Claude, and Meta Llama) collaborate in a single shared Mattermost room.
+
+| Participant | Model & Provider | Working Folder | Addressing | Role & Boundaries | Template File |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `firstcommit-scout` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Scout` | `anyone` (`@firstcommit-scout`) | Repository inspection and beginner issue discovery. **The ONLY agent equipped with GitHub tools.** | [templates/firstcommit-scout.yaml](templates/firstcommit-scout.yaml) |
-| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Contributor guidance, 4-step Action Plan formulation, local testing advice, reviewer hand-off, and PR description generation. *(Zero direct tools; reads room context).* | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
-| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words). *(Zero direct tools; text-only).* | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
+| `firstcommit-scout` | **Google Gemini** (Gemini 2.5 Flash via Antigravity ACP) | `./FirstCommit-Scout` | `anyone` (`@firstcommit-scout`) | Repository inspection and beginner issue discovery. **The ONLY agent equipped with GitHub tools.** | [templates/firstcommit-scout.yaml](templates/firstcommit-scout.yaml) |
+| `firstcommit-mentor` | **Google Gemini** (Gemini 2.5 Flash via Antigravity ACP) | `./FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Contributor guidance, 4-step Action Plan formulation, local testing advice, reviewer hand-off, and PR description generation. *(Zero direct tools; reads room context).* | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
+| `firstcommit-test-designer` | **OpenAI** (GPT-4o-mini via OpenRouter) | `./FirstCommit-TestDesigner` | `anyone` (`@firstcommit-test-designer`) | Designs 2–3 concrete test cases and local run commands (`pytest ...`) as static text under ~200 words. *(Zero direct tools).* | [templates/firstcommit-test-designer.yaml](templates/firstcommit-test-designer.yaml) |
+| `firstcommit-reviewer-claude` | **Anthropic** (Claude Haiku 4.5 via OpenRouter) | `./FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer-claude`) | Cross-model code diff review, scope & drift checking against approved plan, edge case flagging, and suggested tests (<200 words). *(Zero direct tools; text-only).* | [templates/firstcommit-reviewer-claude.yaml](templates/firstcommit-reviewer-claude.yaml) |
+| `firstcommit-explainer` | **Meta Llama** (Llama 3.3 70B via OpenRouter) | `./FirstCommit-Explainer` | `anyone` (`@firstcommit-explainer`) | Demystifies git, GitHub, CI/CD, and open source concepts (`rebase`, `squash`, `DCO`, `CLA`) in plain English under ~200 words. *(Zero direct tools).* | [templates/firstcommit-explainer.yaml](templates/firstcommit-explainer.yaml) |
 
-> **Unified 3-Agent Template:** All three agents and the room can be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
->
-> **Why a 3-Agent Pipeline inside One Room (Least Privilege):** 
-> Rather than granting all agents access to external tools, FirstCommit enforces strict least privilege:
-> 1. **Single Tool Surface:** Only `firstcommit-scout` holds read-only GitHub MCP tools. `firstcommit-mentor` and `firstcommit-reviewer` have **zero direct tools**; they operate purely by reading shared room history in Switch.
-> 2. **Clean Separation of Concerns:** Scout discovers and indexes; Mentor plans and guides; Reviewer acts as an objective quality gate.
-> 3. **Explicit Agent Hand-offs:** The contributor or peer agents route work by name (`@firstcommit-scout`, `@firstcommit-mentor`, `@firstcommit-reviewer`).
-> 4. **Deterministic Anti-Loop Invariants:** Agents only speak when addressed, make at most one hand-off per human message, and never reply to peer acknowledgements, guaranteeing zero infinite agent-to-agent loops.
+> **Unified 5-Agent Template:** The entire multi-provider team and room can be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
+
+#### Why Several Providers in One Room
+1. **Agent-Agnostic Collaboration:** Proves Switch's core value—agents from completely different AI platforms (Google, OpenAI, Anthropic, Meta) interact seamlessly in one room without custom glue code.
+2. **Cross-Model Verification:** Anthropic Claude reviews code diffs developed under Google Gemini's guidance, providing an objective, independent second opinion that eliminates single-model blind spots.
+3. **Task-Optimized Specialization:**
+   - **Gemini 2.5 Flash:** High-speed repository data indexing, issue synthesis, and action planning.
+   - **OpenAI GPT-4o-mini:** Structured edge-case identification and test scenario generation.
+   - **Anthropic Claude Haiku 4.5:** Rigorous diff inspection, drift detection, and style verification.
+   - **Meta Llama 3.3 70B:** Empathetic, plain-English conceptual explanations and real-world analogies.
+
+#### Providers and Data Flow (Privacy & Least Privilege)
+- **What Providers See:** Only public repository text, issue titles/descriptions, and user-pasted diffs are sent to provider APIs.
+- **What Providers Never See:** ZERO credentials, personal access tokens, local file paths, or private host files are ever transmitted.
+- **Untrusted Data Boundary:** All repository text and code are quarantined in `<untrusted_repo_data>` XML boundaries before evaluation, neutralizing prompt injections.
+- **Least-Privilege Invariant:** Only `firstcommit-scout` has tools. The remaining 4 specialist agents have zero execution capabilities, reading exclusively from Switch's shared room history.
+- **Deterministic Anti-Loop Invariants:** Agents only speak when addressed by name, make at most one hand-off per human message, and never reply to peer acknowledgements.
 
 ### b. Channel & Room Setup
 
@@ -113,13 +138,15 @@ sequenceDiagram
 - **Bridge:** Native Switch Mattermost Collaboration Bridge
 - **Participants & Roles:**
   - `charan7` (Workspace Owner / Contributor)
-  - `firstcommit-scout` (AI Agent / Repository Scout)
-  - `firstcommit-mentor` (AI Agent / Contribution Mentor)
-  - `firstcommit-reviewer` (AI Agent / Code Reviewer)
-- **Kickoff Message:** `"👋 Welcome to FirstCommit! We are your 3-agent open-source onboarding team. Mention @firstcommit-scout with a public repo URL to get started!"`
+  - `firstcommit-scout` (AI Agent / Repository Intelligence Scout)
+  - `firstcommit-mentor` (AI Agent / Onboarding Mentor & Action Planner)
+  - `firstcommit-test-designer` (AI Agent / Test Design Specialist)
+  - `firstcommit-reviewer-claude` (AI Agent / Independent Code Reviewer)
+  - `firstcommit-explainer` (AI Agent / Plain-English Concept Guide)
+- **Kickoff Message:** `"👋 Welcome to FirstCommit! We are your 5-agent open-source onboarding team across multiple model providers. Mention @firstcommit-scout with a public repo URL to get started!"`
 - **Native Switch Room Features Used:**
   - **Shared Context & Room Instructions:** Injected into agent sessions to govern mentor personality, teaching style, reviewer brevity, and safety boundaries.
-  - **Roles:** Dedicated roles assigned per agent (`Contribution Mentor` for Mentor, `Code Reviewer` for Reviewer).
+  - **Roles:** Dedicated roles assigned per agent (`Repository Scout`, `Contribution Mentor`, `Test Designer`, `Code Reviewer`, `Concept Guide`).
   - **Room Addressing & Mentions:** Uses Switch's `addressing: anyone` policy allowing both the human and peer agents to route work via `@mentions`.
   - **Decisions & Approval Gates:** Chat-based human confirmation gates preventing premature code guidance or unauthorized actions.
 
@@ -188,22 +215,51 @@ cp .env.example .env
 2. Navigate to **Settings -> Agent Providers** and confirm **Antigravity** is marked as `Signed in` / `Installed`.
 3. In Switch Console, click **Start Server** on the local server card (or verify Docker container `switchdash-local-mattermost-mattermost-1` is running).
 4. Click **Connectors -> Mattermost** and verify the connection is active.
-5. In Switch Console, deploy the two agents and room:
-   - **Option A (Unified Template):** Go to **Templates**, click **+ New Template**, load `templates/firstcommit-team.yaml`, and click **Run**.
-   - **Option B (Individual Templates):** Go to **Agents**, import `templates/firstcommit-agent.yaml` and `templates/firstcommit-reviewer.yaml`, then add both agents to the `#first-commit` channel room.
+5. In Switch Console, deploy the 5-agent team and room:
+   - **Option A (Unified 5-Agent Template - Recommended):** Go to **Templates**, click **+ New Template**, load `templates/firstcommit-team.yaml`, and click **Run**. This spins up all 5 specialist agents and connects them to `#first-commit`.
+   - **Option B (Individual Templates):** Import individual templates from `templates/` (`firstcommit-scout.yaml`, `firstcommit-agent.yaml`, `firstcommit-test-designer.yaml`, `firstcommit-reviewer-claude.yaml`, `firstcommit-explainer.yaml`) and place them into the room.
 
 ---
 
-### Verifying Success
+### Verifying Success (Multi-Agent Team in Action)
 
 1. Open Mattermost in your browser at `http://localhost:60922` (or your configured Mattermost port).
 2. Go to channel `#first-commit`.
-3. Send the onboarding prompt:
+3. **Step 1 — Scout Discovery (Gemini):**
    ```text
-   @firstcommit-mentor Hello! I want to contribute to https://github.com/sandbox-quantum/switch. I have basic TypeScript knowledge. Can you guide me?
+   @firstcommit-scout inspect https://github.com/sandbox-quantum/switch
    ```
-4. **Expected Reply:**
-   The bot responds within seconds, warmly acknowledging your skill level, describing the `sandbox-quantum/switch` repository using real GitHub metadata (stars, language, topics), and presenting 3 real open beginner issues (e.g., `#842 Add the Intercom connector`).
+   *Expected:* Scout posts repository intel, star counts, topics, and recommends 3 beginner issues.
+4. **Step 2 — Action Plan & Gate 1 (Gemini):**
+   ```text
+   @firstcommit-mentor I pick #842
+   ```
+   *Expected:* Mentor formulates a 4-step Action Plan and pauses at **Gate 1** asking for human approval.
+5. **Step 3 — Test Design (OpenAI GPT-4o):**
+   ```text
+   @firstcommit-test-designer what tests should I write for #842?
+   ```
+   *Expected:* Test Designer returns 2–3 happy-path and edge-case scenarios with the exact local `pytest` command (<200 words).
+6. **Step 4 — Terminology Demystification (Meta Llama 3.3):**
+   ```text
+   @firstcommit-explainer what does git rebase mean and when should I use it?
+   ```
+   *Expected:* Explainer provides a friendly real-world analogy and safe terminal commands (<200 words).
+7. **Step 5 — Approval & Cross-Model Review (Anthropic Claude Haiku):**
+   ```text
+   @firstcommit-mentor approve plan
+   ```
+   *Expected:* Mentor celebrates plan approval and prompts for local diff pasting.
+   Paste your diff:
+   ```text
+   @firstcommit-mentor here is my diff: [pastes diff]
+   ```
+   *Expected:* Mentor hands off by name to `@firstcommit-reviewer-claude`, who provides an independent second opinion, safety checks, and verdict.
+8. **Step 6 — PR Description Draft & Gate 2:**
+   ```text
+   @firstcommit-mentor draft my PR description
+   ```
+   *Expected:* Mentor outputs full PR title and markdown description with instructions to submit manually on GitHub.
 
 ---
 

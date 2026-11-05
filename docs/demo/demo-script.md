@@ -15,14 +15,14 @@
 
 ---
 
-### Scene 2 [0:20 - 0:45] Switch Console & Centrality
-- **Visual:** Show **Switch Console** window on desktop (Agents list showing `firstcommit-mentor`, local server status green), then show `docs/demo/cards/card-02-switch.html`.
+### Scene 2 [0:20 - 0:45] Switch Console & Multi-Provider Architecture
+- **Visual:** Show **Switch Console** window on desktop (Agents list showing all 5 agents: `firstcommit-scout`, `firstcommit-mentor`, `firstcommit-test-designer`, `firstcommit-reviewer-claude`, `firstcommit-explainer`, local server status green), then show `docs/demo/cards/card-02-switch.html`.
 - **Duration:** 25 seconds (Switch is prominently visible before 0:45).
-- **Switch Point Proved:** Switch is the central operational backbone. Without Switch's agent lifecycle manager, WebSocket room bridge, and Relay API, the agent has no presence in team chat.
+- **Switch Point Proved:** Switch is the central operational backbone. Without Switch's agent lifecycle manager, WebSocket room bridge, and Relay API, multi-provider agents (Gemini, GPT-4o, Claude, Llama) cannot collaborate in a single shared room.
 
 ---
 
-### Scene 3 [0:45 - 1:30] Live Discovery & Scout Intelligence
+### Scene 3 [0:45 - 1:25] Live Discovery & Scout Intelligence (Google Gemini)
 - **Visual:** Mattermost browser window (`http://localhost:60922/charan7/channels/first-commit`). Zoomed to 125%.
 - **Action (Exact Message to Type):**
   ```text
@@ -40,7 +40,7 @@
 
 ---
 
-### Scene 4 [1:30 - 2:15] Issue Deep Dive & GATE 1 Plan Approval
+### Scene 4 [1:25 - 2:05] Issue Deep Dive & GATE 1 Plan Approval (Google Gemini)
 - **Visual:** Same Mattermost thread.
 - **Action 1 (Exact Message to Type):**
   ```text
@@ -63,9 +63,26 @@
 
 ---
 
-### Scene 5 [2:15 - 2:45] Two-Agent Hand-off, Diff Review & GATE 2 PR Draft
+### Scene 5 [2:05 - 2:40] Multi-Provider Collaboration: Test Design, Concept Demystification & Cross-Model Review
 - **Visual:** Same Mattermost thread.
-- **Action 1 (Contributor pastes diff to Mentor):**
+- **Action 1 (Test Design via OpenAI GPT-4o):**
+  ```text
+  @firstcommit-test-designer what tests should I write for #842?
+  ```
+- **Expected Test Designer Reply (GPT-4o-mini):**
+  - Proposes 2–3 concrete test cases (happy path, HTTP 401 error, empty payload).
+  - Provides exact local command: `pytest tests/test_connectors.py -k "test_intercom" -v`.
+  - Stays under 200 words.
+
+- **Action 2 (Concept Demystification via Meta Llama 3.3):**
+  ```text
+  @firstcommit-explainer what does git rebase do?
+  ```
+- **Expected Explainer Reply (Llama 3.3 70B):**
+  - Explains rebase vs merge using a clear stream-to-river analogy.
+  - Gives clean git command under 180 words.
+
+- **Action 3 (Contributor pastes diff to Mentor; Mentor hands off to Claude Reviewer):**
   ```text
   @firstcommit-mentor here is my git diff for review:
   ```
@@ -89,13 +106,14 @@
   +        return True
   ```
 - **Expected Mentor Reply (Hand-off by Name):**
-  `@firstcommit-reviewer please review this diff against the approved plan.`
-- **Expected Reviewer Reply (Static Review & Suggested Tests):**
+  `@firstcommit-reviewer-claude please review this diff against the approved plan.`
+- **Expected Reviewer Reply (Anthropic Claude Haiku 4.5):**
   - **Verdict:** `looks good`
   - **Observations:** Confirms scope matches the approved plan, notes clean typing and zero out-of-scope edits.
   - **Suggested Tests:** Suggests running `pytest tests/connectors/test_intercom.py -v`.
   - Stays under 200 words and stops (no agent ping-pong loop).
-- **Action 2 (Contributor requests PR draft):**
+
+- **Action 4 (Contributor requests PR draft):**
   ```text
   @firstcommit-mentor draft my PR description
   ```
@@ -103,12 +121,12 @@
   - Generates ready-to-use Pull Request Title: `feat(connectors): add Intercom connector implementation (#842)`.
   - Generates ready-to-use Markdown PR description.
   - **GATE 2**: Instructs the contributor to copy and submit manually on GitHub (enforcing zero automated bot writes).
-- **Switch Point Proved:** Multi-agent collaboration in one room: Switch routes the hand-off between Mentor and Reviewer by name, while shared room history provides instant context without custom plumbing.
+- **Switch Point Proved:** Multi-provider collaboration in one room: Switch routes work across Gemini, GPT-4o, Claude, and Llama in a single shared room, proving true agent-agnosticism.
 
 ---
 
 ### Scene 6 [2:40 - 3:00] Safety Proof & Closing
 - **Visual:** Terminal running `npm run test:safety` in `FirstCommit/mcp-server`, followed by `docs/demo/cards/card-07-disclosure.html`.
-- **Action:** Run `npm run test:safety` in terminal to show 5/5 passing safety tests (injection fixture quarantined, zero writes, zero secret leaks).
+- **Action:** Run `npm run test:safety` in terminal to show 10/10 passing safety tests (injection fixture quarantined, zero writes, zero secret leaks, 5-agent template verified).
 - **Closing Card:** Show `card-07-disclosure.html` with project URL.
 - **Switch Point Proved:** Rigorous safety model and reproducibility.
