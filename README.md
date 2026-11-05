@@ -85,6 +85,8 @@ sequenceDiagram
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `@firstcommit-mentor` | Empathetic contributor onboarding, live issue recommendation, action plan formulation, diff review, and PR description generation | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
 
+> **Why One Agent:** The MVP prioritizes an airtight, reliable single-agent flow that executes live without fragile inter-agent race conditions. One agent (`firstcommit-mentor`); a dedicated Reviewer agent is future work.
+
 ### b. Channel & Room Setup
 
 - **Room Name:** `FirstCommit Room` (auto-bridged to channel `#first-commit`)
