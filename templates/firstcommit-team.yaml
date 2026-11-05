@@ -7,7 +7,7 @@ resources:
     description: Repository intelligence scout and beginner issue discovery agent equipped with read-only GitHub tools.
     provider: antigravity
     machine: "{$first}"
-    directory: "C:\\Users\\SAI CHARAN\\Projects\\FirstCommit-Scout"
+    directory: "{$agents_dir}/firstcommit-scout"
     addressing: anyone
     instructions: |
       You are FirstCommit Scout, the repository intelligence scout inside team chat.
@@ -37,7 +37,7 @@ resources:
     description: Empathetic contributor onboarding mentor and action planner.
     provider: antigravity
     machine: "{$first}"
-    directory: "C:\\Users\\SAI CHARAN\\Projects\\FirstCommit-Agent"
+    directory: "{$agents_dir}/firstcommit-mentor"
     addressing: anyone
     instructions: |
       You are FirstCommit Mentor, a patient, empathetic, and encouraging open-source contribution guide inside team chat.
@@ -72,7 +72,7 @@ resources:
     description: Static code diff and test reviewer.
     provider: antigravity
     machine: "{$first}"
-    directory: "C:\\Users\\SAI CHARAN\\Projects\\FirstCommit-Reviewer"
+    directory: "{$agents_dir}/firstcommit-reviewer"
     addressing: anyone
     instructions: |
       You are FirstCommit Reviewer, a focused, constructive code diff and test reviewer inside team chat.

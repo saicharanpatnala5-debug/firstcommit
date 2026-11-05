@@ -93,9 +93,9 @@ sequenceDiagram
 
 | Name | Provider | Working Folder | Addressing | Job | Template File |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `firstcommit-scout` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Scout` | `anyone` (`@firstcommit-scout`) | Repository inspection and beginner issue discovery. **The ONLY agent equipped with GitHub tools.** | [templates/firstcommit-scout.yaml](templates/firstcommit-scout.yaml) |
-| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Contributor guidance, 4-step Action Plan formulation, local testing advice, reviewer hand-off, and PR description generation. *(Zero direct tools; reads room context).* | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
-| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words). *(Zero direct tools; text-only).* | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
+| `firstcommit-scout` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Scout` | `anyone` (`@firstcommit-scout`) | Repository inspection and beginner issue discovery. **The ONLY agent equipped with GitHub tools.** | [templates/firstcommit-scout.yaml](templates/firstcommit-scout.yaml) |
+| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Contributor guidance, 4-step Action Plan formulation, local testing advice, reviewer hand-off, and PR description generation. *(Zero direct tools; reads room context).* | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
+| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `./FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words). *(Zero direct tools; text-only).* | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
 
 > **Unified 3-Agent Template:** All three agents and the room can be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
 >
@@ -217,7 +217,7 @@ cp .env.example .env
 | **Unit test blocked absolute URLs** | `fetchGitHub` formed URL via `https://api.github.com/${path}`, allowing an absolute path like `/https://evil.com`. | Added strict URL parsing in `github.ts` that rejects any input containing `://` or protocol prefixes. |
 | **Potential agent ping-pong loop** | When multiple agents share a room, an agent may misinterpret peer acknowledgements as new instructions. | Implemented strict anti-loop guards in `antigravity-acp.js` ensuring agents only speak when addressed, make at most one hand-off per message, and ignore peer acknowledgements. |
 
-**Tested on:** Windows 11 Pro, November 5, 2026.
+**Tested on:** Windows 11 Pro, November 5, 2026 *(Switch Console's Windows build is early access)*.
 
 ---
 
