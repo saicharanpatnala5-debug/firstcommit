@@ -22,12 +22,12 @@ Here in Switch Console, you can see `firstcommit-mentor` running natively with t
 
 ---
 
-### [0:45 - 1:30] Scene 3: Live Discovery & Real Issues
+### [0:45 - 1:30] Scene 3: Live Discovery & Scout Intelligence
 *(Visual: Mattermost `#first-commit` channel & `docs/demo/cards/card-03-discovery.html`)*
 
-"Let’s watch the live workflow in Mattermost. As a beginner, I mention `@firstcommit-mentor` with a link to `sandbox-quantum/switch`. 
+"Let’s watch the live workflow in Mattermost. As a beginner, I mention `@firstcommit-scout` with a link to `sandbox-quantum/switch`. 
 
-Notice: FirstCommit immediately calls our custom read-only GitHub MCP server. It pulls live repository metadata—translating over 3,800 stars and the architecture into plain English—and recommends three real, open beginner issues labeled 'hackathon'."
+Notice our least-privilege architecture: FirstCommit Scout is the only agent with GitHub MCP tools. It inspects the repo, translates over 3,890 stars and the architecture into plain English, and recommends three real beginner issues labeled 'hackathon'—then directs me to the mentor."
 
 ---
 

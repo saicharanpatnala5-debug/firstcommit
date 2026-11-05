@@ -22,21 +22,21 @@
 
 ---
 
-### Scene 3 [0:45 - 1:30] Live Discovery & Issue Recommendation
+### Scene 3 [0:45 - 1:30] Live Discovery & Scout Intelligence
 - **Visual:** Mattermost browser window (`http://localhost:60922/charan7/channels/first-commit`). Zoomed to 125%.
 - **Action (Exact Message to Type):**
   ```text
-  @firstcommit-mentor Hello! I want to contribute to https://github.com/sandbox-quantum/switch. I have basic TypeScript knowledge. Can you guide me?
+  @firstcommit-scout inspect https://github.com/sandbox-quantum/switch. I have basic TypeScript knowledge.
   ```
-- **Expected Agent Reply:**
-  - Acknowledges skill level warmly.
-  - Explains `sandbox-quantum/switch` using live GitHub metadata (over 3,865 stars, Python).
-  - Recommends 3 real, open beginner issues:
-    1. `#843: Add the Zendesk connector`
-    2. `#842: Add the Intercom connector` *(recommended easy)*
+- **Expected Scout Reply:**
+  - Explains `sandbox-quantum/switch` using live GitHub metadata (over 3,890 stars, Python).
+  - Presents 3 real open beginner issues:
+    1. `#842: Add the Intercom connector` *(recommended easy)*
+    2. `#843: Add the Zendesk connector`
     3. `#841: Add the BigQuery connector`
-  - Asks the user to choose one.
-- **Switch Point Proved:** Switch handles bidirectional chat events and relays live GitHub MCP data directly into Mattermost.
+  - Concludes with hand-off direction:
+    `"👉 Mention @firstcommit-mentor with your chosen issue (e.g. '@firstcommit-mentor I pick #842') to build your action plan!"`
+- **Switch Point Proved:** Least privilege in action: Scout is the ONLY agent with GitHub MCP tools, querying live data and posting findings to the shared room.
 
 ---
 
