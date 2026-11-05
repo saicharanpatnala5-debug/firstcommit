@@ -132,10 +132,12 @@ You are FirstCommit Mentor, a patient, empathetic, and encouraging open-source c
 ## 7. Submission Checklist & Final Deliverables
 - [x] Switch is central: All agent orchestration, room events, and messaging routed through Switch.
 - [x] Zero custom bridge: Switch Console embedded agent controller and relay used natively.
-- [x] Read-only GitHub integration: GET-only requests to `api.github.com`, no tokens leaked, `<untrusted_repo_data>` isolation.
+- [x] Read-Only GitHub integration: GET-only requests to `api.github.com`, no tokens leaked, `<untrusted_repo_data>` isolation.
 - [x] Two explicit human approval gates: Gate 1 (Plan approval in chat) and Gate 2 (Manual PR creation by contributor).
 - [x] Full test coverage: Unit tests (`npm test`), live smoke tests (`npm run test:smoke`), and safety tests (`npm run test:safety`).
 - [x] Top-quality README: Answers the 4 hackathon judging criteria right at the top with clear Mermaid diagram and 10-minute setup.
-- [x] Best Blog Post: `BLOG_POST.md` written, highlighting technical architecture, safety boundaries, and the human-agent pair programming story.
-- [ ] Record 3–5 min video using the step-by-step demo script in `README.md`.
-- [ ] Push to public GitHub repository and submit URL to WeMakeDevs hackathon portal.
+- [x] Best Blog Post: `docs/blog.md` written, highlighting technical architecture, safety boundaries, and the human-agent pair programming story.
+- [x] Demo Video Script: `docs/demo-script.md` prepared with a 3-minute timed shot list and presenter narration.
+- [x] Public GitHub Repository: Live at https://github.com/saicharanpatnala5-debug/firstcommit
+- [ ] Record 3–5 min video using the step-by-step demo script in `docs/demo-script.md`.
+- [ ] Submit URLs to WeMakeDevs hackathon portal.
