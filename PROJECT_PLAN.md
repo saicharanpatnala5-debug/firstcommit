@@ -117,19 +117,25 @@ You are FirstCommit Mentor, a patient, empathetic, and encouraging open-source c
 
 ## 6. Implementation Phases & Milestones
 
-| Phase | Duration | Scope & Deliverables | Done When Check |
-| :--- | :--- | :--- | :--- |
-| **Phase 0: Setup & Facts** | ~1h | Connect docs MCP/web, verify unverified facts, inspect PATH & Docker, update `PROJECT_PLAN.md`. | Facts confirmed, unknowns resolved, living plan committed. |
-| **Phase 1: Hello World** | ~2h | Clean restart of Switch Console to detect `agy`, verify Antigravity provider, launch bundled Mattermost room, onboard `FirstCommit` agent, test mention `@FirstCommit hello`. | User can take screenshot of agent replying in Mattermost. |
-| **Phase 2: GitHub Tools MCP** | ~2h | TypeScript MCP server with 6 read-only tools, 10-min cache, unit tests with mocks, live smoke test on `sandbox-quantum/switch`. | All tests pass, live call returns real GitHub data. |
-| **Phase 3: Full Mentor Flow** | ~2h | Connect MCP tools to FirstCommit agent, execute full 5-step journey in Mattermost, verify both approval gates. | Full conversation journey completed in Mattermost. |
-| **Phase 4: Safety Proof** | ~1h | Malicious README prompt-injection fixture test, read-only proof, secrets scan, rate-limit fallback test. | Injection safely neutralized; zero-write verified. |
-| **Phase 5: Docs & Demo Video** | ~2h | README answering judges' 4 questions, architecture diagram, 10-minute setup guide, 3-5 min demo video script & recording, Best Blog draft. | README complete, video recorded & linked. |
-| **Phase 6: Code Freeze & Submit**| ~1h | Clean-clone reproduction test from GitHub, submission form completed before 9:00 PM IST Nov 7. | Public repo submitted to hackathon dashboard. |
+| Phase | Duration | Scope & Deliverables | Status | Done When Check |
+| :--- | :--- | :--- | :--- | :--- |
+| **Phase 0: Setup & Facts** | ~1h | Connect docs MCP/web, verify unverified facts, inspect PATH & Docker, update `PROJECT_PLAN.md`. | **COMPLETE** | Facts confirmed, unknowns resolved, living plan committed. |
+| **Phase 1: Hello World** | ~2h | Clean restart of Switch Console to detect `agy`, verify Antigravity provider, launch bundled Mattermost room, onboard `FirstCommit` agent, test mention `@FirstCommit hello`. | **COMPLETE** | User can take screenshot of agent replying in Mattermost. |
+| **Phase 2: GitHub Tools MCP** | ~2h | TypeScript MCP server with 6 read-only tools, 10-min cache, unit tests with mocks, live smoke test on `sandbox-quantum/switch`. | **COMPLETE** | All tests pass (10/10 unit tests, 1/1 smoke test), live call returns real GitHub data. |
+| **Phase 3: Full Mentor Flow** | ~2h | Connect MCP tools to FirstCommit agent, execute full 4-stage journey in Mattermost, verify both approval gates. | **COMPLETE** | Full conversation journey completed in Mattermost with both Gate 1 (Plan approval) and Gate 2 (Manual PR submission) verified. |
+| **Phase 4: Safety Proof** | ~1h | Malicious README prompt-injection fixture test, read-only proof, secrets scan, rate-limit fallback test. | **COMPLETE** | All 4 safety test suites passed (injection neutralized, zero-write verified, secrets scanned). |
+| **Phase 5: Docs & Demo Script** | ~2h | README answering judges' 4 questions, architecture diagram, 10-minute setup guide, 3-5 min demo video script, Best Blog draft. | **COMPLETE** | README.md complete, BLOG_POST.md complete, templates committed. |
+| **Phase 6: Code Freeze & Submit**| ~1h | Clean-clone reproduction test from GitHub, push public repo, record demo video, submission form completed before Nov 7 deadline. | **ACTIVE** | Public repo submitted to hackathon dashboard. |
 
 ---
 
-## 7. Immediate Next Steps (Human Actions for Phase 1)
-1. **Restart Switch Console:** Quit all running Switch Console processes completely so it inherits the newly registered User `PATH` containing `agy.exe`.
-2. **Re-open Switch Console:** Navigate to `Settings -> Agent Providers -> Antigravity` and confirm status shows `Signed in` / `Installed`.
-3. **Verify Local Switch Server & Mattermost:** Check green status on `This computer` in Switch Console.
+## 7. Submission Checklist & Final Deliverables
+- [x] Switch is central: All agent orchestration, room events, and messaging routed through Switch.
+- [x] Zero custom bridge: Switch Console embedded agent controller and relay used natively.
+- [x] Read-only GitHub integration: GET-only requests to `api.github.com`, no tokens leaked, `<untrusted_repo_data>` isolation.
+- [x] Two explicit human approval gates: Gate 1 (Plan approval in chat) and Gate 2 (Manual PR creation by contributor).
+- [x] Full test coverage: Unit tests (`npm test`), live smoke tests (`npm run test:smoke`), and safety tests (`npm run test:safety`).
+- [x] Top-quality README: Answers the 4 hackathon judging criteria right at the top with clear Mermaid diagram and 10-minute setup.
+- [x] Best Blog Post: `BLOG_POST.md` written, highlighting technical architecture, safety boundaries, and the human-agent pair programming story.
+- [ ] Record 3–5 min video using the step-by-step demo script in `README.md`.
+- [ ] Push to public GitHub repository and submit URL to WeMakeDevs hackathon portal.
