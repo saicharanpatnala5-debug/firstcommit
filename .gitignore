@@ -9,6 +9,7 @@ dist/
 
 # Scratch & research caches
 docs_cache/
+scratch/
 *.html
 !docs/demo/cards/*.html
 *.xml
