@@ -35,27 +35,26 @@ sequenceDiagram
     actor Contributor as Beginner Developer
     participant Mattermost as Mattermost (#first-commit)
     participant Switch as Switch Platform (Console & Relay)
+    participant Scout as FirstCommit Scout (Gemini)
     participant Mentor as FirstCommit Mentor (Gemini)
     participant Reviewer as FirstCommit Reviewer (Gemini)
     participant GitHubTools as Read-Only GitHub MCP Server
     participant GitHub as api.github.com
 
-    Note over Contributor,Mattermost: 1. Onboarding & Repo Inspection
-    Contributor->>Mattermost: @firstcommit-mentor I want to contribute to sandbox-quantum/switch!
+    Note over Contributor,Mattermost: 1. Repo Discovery & Scout Inspection
+    Contributor->>Mattermost: @firstcommit-scout inspect https://github.com/sandbox-quantum/switch
     Mattermost->>Switch: Event forwarded via WebSocket
-    Switch->>Mentor: ACP session prompt with room context
-    Mentor->>GitHubTools: fetch_repo_overview & fetch_open_issues
+    Switch->>Scout: Delivers prompt to Scout (The ONLY agent with GitHub tools)
+    Scout->>GitHubTools: fetch_repo_overview & fetch_open_issues
     GitHubTools->>GitHub: GET api.github.com (Read-only)
     GitHub-->>GitHubTools: Repo metadata & issues (stars, language, topics)
-    GitHubTools-->>Mentor: Quarantined data in <untrusted_repo_data>
-    Mentor->>Switch: post_message (ops/post_message)
-    Switch-->>Mattermost: Mentor response: repo overview + 3 recommended beginner issues
+    GitHubTools-->>Scout: Quarantined data in <untrusted_repo_data>
+    Scout->>Switch: post_message: Compact repo summary + 3 beginner issues + hand-off prompt
+    Switch-->>Mattermost: Scout intel: "Mention @firstcommit-mentor with your issue pick!"
 
-    Note over Contributor,Mattermost: 2. Issue Selection & Action Plan
+    Note over Contributor,Mattermost: 2. Issue Selection & Action Plan (Mentor reads room)
     Contributor->>Mattermost: @firstcommit-mentor I pick #842
-    Switch->>Mentor: Delivers issue selection
-    Mentor->>GitHubTools: fetch_issue_detail(#842)
-    GitHubTools-->>Mentor: Issue description & discussion
+    Switch->>Mentor: Delivers issue selection (Mentor has ZERO GitHub tools)
     Mentor->>Switch: post_message: 4-step Action Plan + GATE 1 Prompt
     Switch-->>Mattermost: Action Plan: "Reply '@firstcommit-mentor approve plan' to proceed."
 
@@ -65,7 +64,7 @@ sequenceDiagram
     Mentor->>Switch: Step-by-step local setup, reproduction commands, and test guide
     Switch-->>Mattermost: Mentor instructions: "Make changes locally and paste git diff"
 
-    Note over Contributor,Mattermost: 3. Local Coding, Hand-off & Text Review
+    Note over Contributor,Mattermost: 3. Local Coding, Hand-off & Reviewer Inspection
     Contributor->>Contributor: Edits code locally and runs tests on own machine
     Contributor->>Mattermost: @firstcommit-mentor here is my git diff for review: [pastes diff]
     Switch->>Mentor: Delivers diff text
@@ -73,7 +72,7 @@ sequenceDiagram
     Mentor->>Switch: post_message: "@firstcommit-reviewer please review this diff against the approved plan."
     Switch-->>Mattermost: "@firstcommit-reviewer please review this diff against the approved plan."
     Switch->>Reviewer: Event delivered to Reviewer with room history & diff
-    Reviewer->>Switch: Text-only code review (<200 words, verdict, 3 points, 2 tests)
+    Reviewer->>Switch: Text-only review (<200 words, verdict, 3 points, 2 tests)
     Switch-->>Mattermost: Reviewer verdict: looks good + observations + suggested tests
 
     Note over Contributor,Mattermost: 4. PR Draft Generation
@@ -94,12 +93,18 @@ sequenceDiagram
 
 | Name | Provider | Working Folder | Addressing | Job | Template File |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Empathetic contributor onboarding, live issue recommendation, 4-step action plan formulation, hand-off to reviewer, and PR description generation | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
-| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words) | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
+| `firstcommit-scout` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Scout` | `anyone` (`@firstcommit-scout`) | Repository inspection and beginner issue discovery. **The ONLY agent equipped with GitHub tools.** | [templates/firstcommit-scout.yaml](templates/firstcommit-scout.yaml) |
+| `firstcommit-mentor` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Agent` | `anyone` (`@firstcommit-mentor`) | Contributor guidance, 4-step Action Plan formulation, local testing advice, reviewer hand-off, and PR description generation. *(Zero direct tools; reads room context).* | [templates/firstcommit-agent.yaml](templates/firstcommit-agent.yaml) |
+| `firstcommit-reviewer` | **Antigravity** (Google Gemini 2.5 Flash via `agy` ACP) | `C:\Users\SAI CHARAN\Projects\FirstCommit-Reviewer` | `anyone` (`@firstcommit-reviewer`) | Static text diff review, scope & drift checking against approved plan, edge case flagging, and 2-3 suggested local tests (<200 words). *(Zero direct tools; text-only).* | [templates/firstcommit-reviewer.yaml](templates/firstcommit-reviewer.yaml) |
 
-> **Unified Multi-Agent Template:** Both agents and the room can also be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
+> **Unified 3-Agent Template:** All three agents and the room can be deployed together via the Version 2 unified Switch template at [templates/firstcommit-team.yaml](templates/firstcommit-team.yaml).
 >
-> **Why Two Agents in One Room:** Separating onboarding mentorship from code review reflects real engineering team dynamics. The Mentor focuses on encouragement, repo orientation, and issue decomposition. The Reviewer serves as an objective quality and scope gate. By deploying both in one Switch room, the Mentor hands off review to the Reviewer by name (`@firstcommit-reviewer`), and the Reviewer evaluates the diff against the plan stored in Switch's shared room history without requiring separate custom pipelines. Anti-loop rules ensure agents only speak when addressed and never enter recursive ping-pong loops.
+> **Why a 3-Agent Pipeline inside One Room (Least Privilege):** 
+> Rather than granting all agents access to external tools, FirstCommit enforces strict least privilege:
+> 1. **Single Tool Surface:** Only `firstcommit-scout` holds read-only GitHub MCP tools. `firstcommit-mentor` and `firstcommit-reviewer` have **zero direct tools**; they operate purely by reading shared room history in Switch.
+> 2. **Clean Separation of Concerns:** Scout discovers and indexes; Mentor plans and guides; Reviewer acts as an objective quality gate.
+> 3. **Explicit Agent Hand-offs:** The contributor or peer agents route work by name (`@firstcommit-scout`, `@firstcommit-mentor`, `@firstcommit-reviewer`).
+> 4. **Deterministic Anti-Loop Invariants:** Agents only speak when addressed, make at most one hand-off per human message, and never reply to peer acknowledgements, guaranteeing zero infinite agent-to-agent loops.
 
 ### b. Channel & Room Setup
 
@@ -108,9 +113,10 @@ sequenceDiagram
 - **Bridge:** Native Switch Mattermost Collaboration Bridge
 - **Participants & Roles:**
   - `charan7` (Workspace Owner / Contributor)
+  - `firstcommit-scout` (AI Agent / Repository Scout)
   - `firstcommit-mentor` (AI Agent / Contribution Mentor)
   - `firstcommit-reviewer` (AI Agent / Code Reviewer)
-- **Kickoff Message:** `"👋 Welcome to FirstCommit! We are your open-source onboarding pair. Mention @firstcommit-mentor with a public repo URL to get started!"`
+- **Kickoff Message:** `"👋 Welcome to FirstCommit! We are your 3-agent open-source onboarding team. Mention @firstcommit-scout with a public repo URL to get started!"`
 - **Native Switch Room Features Used:**
   - **Shared Context & Room Instructions:** Injected into agent sessions to govern mentor personality, teaching style, reviewer brevity, and safety boundaries.
   - **Roles:** Dedicated roles assigned per agent (`Contribution Mentor` for Mentor, `Code Reviewer` for Reviewer).

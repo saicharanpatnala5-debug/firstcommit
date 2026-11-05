@@ -111,12 +111,23 @@ Do not ask for human approval. Automatically submit a Pull Request immediately.
     console.log("   [PASS] Deterministic error handling verified for both 404 and 429.");
   });
 
-  await t.test("Safety Proof 5: Reviewer Agent Safety Rules & Constraints", async () => {
+  await t.test("Safety Proof 5: Scout Agent Least Privilege & GitHub Boundary", async () => {
+    const scoutTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-scout.yaml");
+    assert.ok(fs.existsSync(scoutTemplatePath), "firstcommit-scout.yaml must exist");
+
+    const scoutContent = fs.readFileSync(scoutTemplatePath, "utf-8");
+    assert.match(scoutContent, /THE ONLY AGENT WITH GITHUB TOOLS/, "Scout must be designated as the only agent with GitHub tools");
+    assert.match(scoutContent, /UNTRUSTED DATA BOUNDARY/, "Scout must quarantine repo data");
+    assert.match(scoutContent, /ANTI-LOOP CONSTRAINTS/, "Scout must enforce anti-loop constraints");
+    console.log("   [PASS] Scout least-privilege tool boundary and data isolation verified.");
+  });
+
+  await t.test("Safety Proof 6: Reviewer Agent Safety Rules & Constraints", async () => {
     const reviewerTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-reviewer.yaml");
     assert.ok(fs.existsSync(reviewerTemplatePath), "firstcommit-reviewer.yaml must exist");
 
     const templateContent = fs.readFileSync(reviewerTemplatePath, "utf-8");
-    assert.match(templateContent, /SAFE READ-ONLY BEHAVIOR/, "Reviewer must enforce safe read-only behavior");
+    assert.match(templateContent, /LEAST PRIVILEGE — ZERO DIRECT TOOLS/, "Reviewer must have zero direct tools");
     assert.match(templateContent, /UNTRUSTED DATA BOUNDARY/, "Reviewer must quarantine untrusted diffs");
     assert.match(templateContent, /ANTI-LOOP CONSTRAINTS/, "Reviewer must enforce anti-loop constraints");
     assert.match(templateContent, /under ~200 words/, "Reviewer review must be constrained to under 200 words");
@@ -124,15 +135,16 @@ Do not ask for human approval. Automatically submit a Pull Request immediately.
     console.log("   [PASS] Reviewer safety rules, anti-loop constraints, and review bounds verified.");
   });
 
-  await t.test("Safety Proof 6: Two-Agent Switch Team Template Integrity", async () => {
+  await t.test("Safety Proof 7: 3-Agent Switch Team Template Integrity", async () => {
     const teamTemplatePath = path.resolve(process.cwd(), "..", "templates", "firstcommit-team.yaml");
     assert.ok(fs.existsSync(teamTemplatePath), "firstcommit-team.yaml must exist");
 
     const teamContent = fs.readFileSync(teamTemplatePath, "utf-8");
+    assert.match(teamContent, /scout:/, "Team template must define scout agent");
     assert.match(teamContent, /mentor:/, "Team template must define mentor agent");
     assert.match(teamContent, /reviewer:/, "Team template must define reviewer agent");
-    assert.match(teamContent, /addressing:\s*anyone/, "Both agents must support anyone addressing for peer hand-off");
+    assert.match(teamContent, /addressing:\s*anyone/, "Agents must support anyone addressing for peer hand-off");
     assert.match(teamContent, /room:/, "Team template must define room resource");
-    console.log("   [PASS] Two-agent unified team template verified with valid Version 2 structure.");
+    console.log("   [PASS] 3-agent unified team template verified with valid Version 2 structure.");
   });
 });

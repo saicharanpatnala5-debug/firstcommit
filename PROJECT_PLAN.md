@@ -126,6 +126,7 @@ You are FirstCommit Mentor, a patient, empathetic, and encouraging open-source c
 | **Phase 4: Safety Proof** | ~1h | Malicious README prompt-injection fixture test, read-only proof, secrets scan, rate-limit fallback test. | **COMPLETE** | All 4 safety test suites passed (injection neutralized, zero-write verified, secrets scanned). |
 | **Phase 5: Docs & Demo Script** | ~2h | README answering judges' 4 questions, architecture diagram, 10-minute setup guide, 3-5 min demo video script, Best Blog draft. | **COMPLETE** | README.md complete, BLOG_POST.md complete, templates committed. |
 | **Phase 1b: Two Agents in One Room** | ~1h | Unified Version 2 template (`firstcommit-team.yaml`), `firstcommit-reviewer` persona, hand-off workflow, anti-loop guards, 6 safety proof tests. | **COMPLETE** | Multi-agent hand-off and Reviewer constraints verified in safety tests. |
+| **Phase 1c: 3-Agent Least-Privilege Pipeline** | ~1h | Added `firstcommit-scout` (only agent with GitHub tools), `firstcommit-mentor` (zero direct tools), and `firstcommit-reviewer` (text-only diff review), 8 safety proofs. | **COMPLETE** | Full 3-agent least privilege pipeline verified in automated tests. |
 | **Phase 6: Code Freeze & Submit**| ~1h | Clean-clone reproduction test from GitHub, push public repo, record demo video, submission form completed before Nov 7 deadline. | **ACTIVE** | Public repo submitted to hackathon dashboard. |
 
 ---

@@ -1,5 +1,5 @@
 name: FirstCommit Onboarding Room
-description: An open-source contribution room where first-time contributors, an onboarding mentor, and a code reviewer collaborate inside Mattermost via Switch.
+description: An open-source contribution room where first-time contributors collaborate with a 3-agent onboarding team (Scout, Mentor, Reviewer) inside Mattermost via Switch.
 messaging_app: mattermost
 channel:
   name: first-commit
@@ -7,6 +7,8 @@ channel:
   public: true
 
 agents:
+  - name: firstcommit-scout
+    role: "Repository Scout"
   - name: firstcommit-mentor
     role: "Contribution Mentor"
   - name: firstcommit-reviewer
@@ -16,8 +18,9 @@ shared_context:
   instructions: |
     Welcome contributors to the project. Ensure every contributor feels encouraged and supported.
     All code actions and git commands are executed locally by the human developer.
-    - The mentor (@firstcommit-mentor) guides repository overview, issue selection, and action planning.
-    - The reviewer (@firstcommit-reviewer) performs text-only code diff reviews and suggests local tests.
+    - @firstcommit-scout: The only agent with GitHub tools; inspects public repos and surfaces beginner issues.
+    - @firstcommit-mentor: Breaks down issues, creates 4-step action plans, guides local testing, and drafts PR descriptions.
+    - @firstcommit-reviewer: Evaluates code diffs as static text against the approved plan and suggests local tests.
   documents:
     - title: "First-Time Contributor Standards"
       content: |
@@ -27,9 +30,10 @@ shared_context:
         4. Maintain respectful, constructive collaboration at all times.
 
 kickoff_message: |
-  👋 Welcome to **FirstCommit**! We are your open-source onboarding pair.
+  👋 Welcome to **FirstCommit**! We are your 3-agent open-source onboarding team.
   
-  - **@firstcommit-mentor**: Recommends beginner issues, breaks them down, and creates 4-step action plans.
+  - **@firstcommit-scout**: Inspects public GitHub repos and finds top beginner issues.
+  - **@firstcommit-mentor**: Explains issues, formulates 4-step action plans, and drafts PR descriptions.
   - **@firstcommit-reviewer**: Inspects your code diffs against the approved plan and suggests local tests.
   
-  To begin, mention `@firstcommit-mentor` with a public GitHub repo URL and your skill level! 🚀
+  To begin, mention `@firstcommit-scout` with a public GitHub repo URL (e.g. `@firstcommit-scout https://github.com/sandbox-quantum/switch`)! 🚀
