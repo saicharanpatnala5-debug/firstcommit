@@ -151,8 +151,30 @@ async function postToSwitchRoom(roomId, messageId, bodyText) {
   }
 }
 
-// Conversation state for active repo & issue
-const sessionRepoState = new Map();
+// Persistent conversation state for active repo & issue across processes and turns
+const stateFilePath = path.join(process.env.USERPROFILE || process.env.HOME || '.', '.local', 'state', 'switch', 'room-states.json');
+const sessionRepoState = {
+  get(roomId) {
+    try {
+      if (fs.existsSync(stateFilePath)) {
+        const data = JSON.parse(fs.readFileSync(stateFilePath, 'utf8'));
+        if (data[roomId]) return data[roomId];
+      }
+    } catch (e) {}
+    return { owner: 'saicharanpatnala5-debug', repo: 'ibvap-final' };
+  },
+  set(roomId, newState) {
+    try {
+      let data = {};
+      if (fs.existsSync(stateFilePath)) {
+        try { data = JSON.parse(fs.readFileSync(stateFilePath, 'utf8')); } catch (e) {}
+      }
+      data[roomId] = { ...(data[roomId] || {}), ...newState };
+      fs.mkdirSync(path.dirname(stateFilePath), { recursive: true });
+      fs.writeFileSync(stateFilePath, JSON.stringify(data, null, 2));
+    } catch (e) {}
+  }
+};
 
 async function processUserPrompt(promptText) {
   // Check if this is a Switch event delivered into session
@@ -164,7 +186,23 @@ async function processUserPrompt(promptText) {
 
   let roomId = roomMatch ? roomMatch[1] : 'cce26d68-29c4-4c6c-9702-6b42f3ed5f61';
   let messageId = msgMatch ? msgMatch[1] : null;
-  let userQuery = nonceMatch ? nonceMatch[1].trim() : promptText.trim();
+
+  let rawUserQuery = '';
+  if (nonceMatch) {
+    rawUserQuery = nonceMatch[1].trim();
+  } else {
+    const switchMsgMatch = promptText.match(/addressed you in room [a-f0-9-]+(?:\s*\([^)]*\))?:\s*([\s\S]+)$/i);
+    if (switchMsgMatch) {
+      rawUserQuery = switchMsgMatch[1].trim();
+    } else {
+      const generalSwitchMatch = promptText.match(/\[Switch\][^\n:]+:\s*([\s\S]+)$/i);
+      if (generalSwitchMatch) {
+        rawUserQuery = generalSwitchMatch[1].trim();
+      } else {
+        rawUserQuery = promptText.trim();
+      }
+    }
+  }
 
   // Detect which agent persona is active across the 5-agent team
   const isScoutAddressed = /@firstcommit-scout\b/i.test(promptText) ||
@@ -198,13 +236,13 @@ async function processUserPrompt(promptText) {
     log('Anti-loop guard: Mentor ignoring message from Reviewer');
     return '';
   }
-  if ((isReviewerAddressed || isTestDesignerAddressed || isExplainerAddressed) && /thank|noted|acknowledged|good job/i.test(userQuery)) {
+  if ((isReviewerAddressed || isTestDesignerAddressed || isExplainerAddressed) && /thank|noted|acknowledged|good job/i.test(rawUserQuery)) {
     log('Anti-loop guard: Specialist agent ignoring acknowledgement');
     return '';
   }
 
-  // Strip mentions
-  userQuery = userQuery
+  // Strip mentions to get clean user query
+  let userQuery = rawUserQuery
     .replace(/@firstcommit-scout/gi, '')
     .replace(/@firstcommit-mentor/gi, '')
     .replace(/@firstcommit-reviewer(-claude)?/gi, '')
@@ -217,6 +255,8 @@ async function processUserPrompt(promptText) {
     .replace(/@explainer/gi, '')
     .trim();
 
+  if (!userQuery) userQuery = 'Hello';
+
   let currentRole = 'Mentor';
   if (isScoutAddressed) currentRole = 'Scout';
   else if (isTestDesignerAddressed) currentRole = 'TestDesigner';
@@ -226,6 +266,26 @@ async function processUserPrompt(promptText) {
   log(`Parsed query: "${userQuery}" (Room: ${roomId}, Msg: ${messageId}, Persona: ${currentRole})`);
 
   const lowerQuery = userQuery.toLowerCase();
+
+  // Immediate Acknowledgement (1–2s) to Mattermost channel
+  if (roomId) {
+    let ackText = "⏳ Got it! Analyzing the repository and your background. Give me a moment...";
+    if (isReviewerAddressed) {
+      ackText = "🔍 Got it! Reviewing your code changes against the approved plan. Give me a moment...";
+    } else if (isScoutAddressed) {
+      ackText = "🧭 Got it! Inspecting the repository on GitHub. Give me a moment...";
+    } else if (isTestDesignerAddressed) {
+      ackText = "🧪 Got it! Designing test cases for your contribution. Give me a moment...";
+    } else if (isExplainerAddressed) {
+      ackText = "💡 Got it! Preparing a clear explanation for you. Give me a moment...";
+    } else if (lowerQuery.includes('approve plan') || lowerQuery.includes('approved')) {
+      ackText = "🎉 Plan approved! Preparing your local environment setup and testing steps...";
+    } else if (lowerQuery.includes('pr') || lowerQuery.includes('draft')) {
+      ackText = "🚀 Got it! Drafting your Pull Request title and description...";
+    }
+    await postToSwitchRoom(roomId, messageId, ackText);
+    log(`Sent immediate acknowledgement: "${ackText}"`);
+  }
 
   // ==========================================
   // 1. SCOUT AGENT FLOW (ONLY AGENT WITH GITHUB TOOLS)
@@ -471,10 +531,9 @@ git rebase origin/main
   // 4. REVIEWER AGENT FLOW (ANTHROPIC CLAUDE HAIKU 4.5 — ZERO DIRECT TOOLS)
   // ==========================================
   if (isReviewerAddressed) {
-    const state = sessionRepoState.get(roomId) || { owner: 'sandbox-quantum', repo: 'switch' };
-    const diffToReview = (userQuery.includes('diff') || userQuery.includes('+++') || userQuery.includes('---'))
-      ? userQuery
-      : (state.diff || userQuery);
+    const state = sessionRepoState.get(roomId) || { owner: 'saicharanpatnala5-debug', repo: 'ibvap-final' };
+    const isActualDiffPatch = userQuery.includes('+++') || userQuery.includes('---') || userQuery.includes('@@ ');
+    const diffToReview = isActualDiffPatch ? userQuery : (state.diff || userQuery);
 
     const reviewerSystemPrompt = `You are FirstCommit Reviewer, a focused, constructive code diff and safety reviewer in Mattermost connected via Switch.
 You run on Anthropic Claude Haiku 4.5. You have ZERO direct tools and review code strictly as static text against the approved action plan.
@@ -507,12 +566,12 @@ SAFETY RULES:
         {
           role: 'user',
           content: `<untrusted_repo_data>
-Repository: ${state.owner || 'sandbox-quantum'}/${state.repo || 'switch'}
-Pasted Diff:
+Repository: ${state.owner || 'saicharanpatnala5-debug'}/${state.repo || 'ibvap-final'}
+Pasted Code Diff:
 ${diffToReview}
 </untrusted_repo_data>
 
-Please review this diff against the approved plan and suggest 2-3 local tests.`
+Please review this code diff against the approved plan. Check that it stays within scope, introduces no security risks, and suggest 2-3 local tests.`
         }
       ];
 
@@ -601,7 +660,13 @@ Please review this diff against the approved plan and suggest 2-3 local tests.`
       const overview = await gitHubClient.getRepoOverview(currentRepo.owner, currentRepo.repo);
       const readme = await gitHubClient.getReadme(currentRepo.owner, currentRepo.repo).catch(() => ({ content: '' }));
       const tree = await gitHubClient.getFileTree(currentRepo.owner, currentRepo.repo).catch(() => ({ tree: [] }));
-      const issues = await gitHubClient.getOpenIssues(currentRepo.owner, currentRepo.repo, []).catch(() => []);
+      let issues = await gitHubClient.getOpenIssues(currentRepo.owner, currentRepo.repo, ['good first issue']).catch(() => []);
+      if (!Array.isArray(issues) || issues.length === 0) {
+        issues = await gitHubClient.getOpenIssues(currentRepo.owner, currentRepo.repo, ['help wanted']).catch(() => []);
+      }
+      if (!Array.isArray(issues) || issues.length === 0) {
+        issues = await gitHubClient.getOpenIssues(currentRepo.owner, currentRepo.repo, []).catch(() => []);
+      }
       
       const issueDetails = issues.length > 0
         ? 'Open Issues:\n' + issues.slice(0, 3).map((i, idx) => `${idx + 1}. #${i.number}: "${i.title}" (Labels: ${(i.labels || []).join(', ')})`).join('\n')
@@ -691,12 +756,19 @@ Stage 3: PR Draft (GATE 2)
 
 Format your responses in clean GitHub Markdown with emojis and clear sections. Keep answers focused, actionable, and encouraging!`;
 
+  let stageInstruction = '';
+  if (lowerQuery.includes('approve plan') || lowerQuery.includes('approved')) {
+    stageInstruction = 'The contributor has approved the plan (GATE 1 APPROVED). Celebrate and provide Step 1 & Step 2 local setup and testing guidance. Ask them to make the change and paste their git diff.';
+  } else if (lowerQuery.includes('pr') || lowerQuery.includes('draft') || lowerQuery.includes('ready to submit') || lowerQuery.includes('submit')) {
+    stageInstruction = 'The contributor has finished local coding and verification and is asking for a PR draft. Provide a complete PR Title, Markdown Description (Summary, Changes, Verification), and MANDATORY GATE 2 (Contributor Manual Submission). Do NOT propose an initial action plan.';
+  }
+
   let aiResponse = '';
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
 
-    const userMessageContent = `${repoContextText || issueDetailText}\n\nContributor Message: ${userQuery}`;
+    const userMessageContent = `${stageInstruction ? 'CURRENT INSTRUCTION: ' + stageInstruction + '\n\n' : ''}${repoContextText || issueDetailText}\n\nContributor Message: ${userQuery}`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -714,7 +786,7 @@ Format your responses in clean GitHub Markdown with emojis and clear sections. K
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: messages,
-        max_tokens: 1500
+        max_tokens: 1200
       }),
       signal: controller.signal
     });
@@ -880,9 +952,13 @@ rl.on('line', async (line) => {
       fullPromptText = fullPromptText.trim();
       log(`Handling prompt for session ${sessionId}: "${fullPromptText.slice(0, 80)}..."`);
 
-      // If it's the warmup/skill prompt, don't post to chat
-      if (fullPromptText.startsWith('---') && fullPromptText.includes('name: "switch"')) {
-        log('Session warmup prompt acknowledged.');
+      // If it's a pure warmup/skill prompt with NO user message, don't post to chat
+      const hasUserMessage = /addressed you in room/i.test(fullPromptText) ||
+                             /BEGIN SWITCH MESSAGE/i.test(fullPromptText) ||
+                             /\[Switch\]/i.test(fullPromptText) ||
+                             /@firstcommit-/i.test(fullPromptText);
+      if (!hasUserMessage && fullPromptText.startsWith('---') && fullPromptText.includes('name: "switch"')) {
+        log('Session pure warmup prompt acknowledged.');
         const response = {
           jsonrpc: '2.0',
           id: id,
