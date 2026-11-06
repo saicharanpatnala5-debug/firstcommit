@@ -272,9 +272,44 @@ function extractRoomAndMessageId(promptText) {
   return { roomId, messageId };
 }
 
+// Message deduplication tracker (idempotency within 10 minutes)
+const processedMessageMap = new Map();
+function isDuplicateMessage(msgId) {
+  if (!msgId) return false;
+  const now = Date.now();
+  for (const [id, ts] of processedMessageMap.entries()) {
+    if (now - ts > 10 * 60 * 1000) processedMessageMap.delete(id);
+  }
+  if (processedMessageMap.has(msgId)) {
+    return true;
+  }
+  processedMessageMap.set(msgId, now);
+  return false;
+}
+
 async function processUserPrompt(promptText) {
   const { roomId, messageId } = extractRoomAndMessageId(promptText);
   try {
+    if (messageId && isDuplicateMessage(messageId)) {
+      log(`[Anti-Loop Guard] Message ${messageId} already processed. Dropping duplicate event.`);
+      return null;
+    }
+
+    // Strict Anti-loop guards across multi-agent turns:
+    // Drop any prompt initiated by another bot or containing bot output signatures
+    if (
+      /firstcommit-(scout|mentor|reviewer|test-designer|explainer) addressed you/i.test(promptText) ||
+      /\[Switch\] firstcommit-/i.test(promptText) ||
+      /### 🔍 Code Review by FirstCommit/i.test(promptText) ||
+      /### 🧭 FirstCommit Scout/i.test(promptText) ||
+      /### 🚀 PR Draft/i.test(promptText) ||
+      /### 🎉 Plan Approved/i.test(promptText) ||
+      /from_bot["']?\s*:\s*["']?true/i.test(promptText)
+    ) {
+      log('[Anti-Loop Guard] Dropping autonomous bot prompt to prevent echo loop.');
+      return null;
+    }
+
     const rawUserQuery = extractUserQuery(promptText);
 
     // Check if addressed to specific persona
@@ -301,14 +336,9 @@ async function processUserPrompt(promptText) {
       process.cwd().toLowerCase().includes('firstcommit-explainer')
     );
 
-    // Anti-loop guards across multi-agent turns
-    if (/firstcommit-reviewer addressed you/i.test(promptText) || /\[Switch\] firstcommit-reviewer\b/i.test(promptText)) {
-      log('Anti-loop guard: Ignoring incoming Reviewer notification');
-      return '';
-    }
     if ((isReviewerAddressed || isTestDesignerAddressed || isExplainerAddressed) && /^(?:thank|noted|acknowledged|good job|ok|okay)\b/i.test(rawUserQuery.trim())) {
       log('Anti-loop guard: Specialist agent ignoring acknowledgement');
-      return '';
+      return null;
     }
 
     // Strip mentions to get clean user query
@@ -356,31 +386,29 @@ async function processUserPrompt(promptText) {
     if (repoUrlMatch && repoUrlMatch[1].toLowerCase() !== 'repos') {
       const owner = repoUrlMatch[1];
       const repo = repoUrlMatch[2].replace(/\.git$/, '');
-      sessionRepoState.set(roomId, { owner, repo });
-      log(`Tracked active repo: ${owner}/${repo}`);
+      if (isInitialRepoInquiry) {
+        // Reset state for new repository inquiry so approval and previous diffs don't carry over
+        sessionRepoState.set(roomId, { owner, repo, planApproved: false, lastDiff: null, lastReview: null, history: [] });
+        log(`Reset and tracked new active repo: ${owner}/${repo}`);
+      } else {
+        sessionRepoState.set(roomId, { owner, repo });
+        log(`Tracked active repo: ${owner}/${repo}`);
+      }
     }
     const currentRepo = sessionRepoState.get(roomId);
 
-    // Immediate Acknowledgement (1s) to Mattermost channel feed
+    // Immediate Acknowledgement for slow operations only (e.g. Scout or new repo inspection)
     if (roomId) {
-      let ackText = "💡 Got your message! Preparing your guidance...";
-      if (isReviewerAddressed || isReviewRequest) {
-        ackText = "🔍 Got it! Reviewing your code diff against the approved plan with FirstCommit Reviewer (Claude Haiku 4.5)...";
-      } else if (isScoutAddressed) {
+      let ackText = null;
+      if (isScoutAddressed) {
         ackText = `🧭 Got it! FirstCommit Scout is inspecting **${currentRepo.owner}/${currentRepo.repo}** on GitHub...`;
-      } else if (isTestDesignerAddressed) {
-        ackText = "🧪 Got it! Designing test cases for your contribution...";
-      } else if (isExplainerAddressed) {
-        ackText = "💡 Got it! Preparing a clear explanation for you...";
-      } else if (isPlanApproval) {
-        ackText = "🎉 Plan approved! Preparing your step-by-step local development setup...";
-      } else if (isPrDraftRequest) {
-        ackText = "🚀 Got it! Drafting your Pull Request title and description...";
       } else if (isInitialRepoInquiry && repoUrlMatch) {
         ackText = `⏳ Got it! Analyzing **${repoUrlMatch[1]}/${repoUrlMatch[2]}** and your background. Crafting your personalized action plan...`;
       }
-      await postToSwitchRoom(roomId, messageId, ackText);
-      log(`Sent immediate acknowledgement: "${ackText}"`);
+      if (ackText) {
+        await postToSwitchRoom(roomId, messageId, ackText);
+        log(`Sent immediate acknowledgement: "${ackText}"`);
+      }
     }
 
     // ==========================================
@@ -421,7 +449,7 @@ For each file:
 - What it does
 - Why it is critical for a new contributor.
 Format in clean GitHub markdown under <untrusted_repo_data>, under 220 words.
-Conclude with a hand-off to @firstcommit-mentor.`;
+Conclude with an invitation for the contributor to ask FirstCommit Mentor for starting tasks without using raw bot mentions.`;
 
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 12000);
@@ -467,8 +495,8 @@ Here are the three most important files in **${owner}/${repo}** for a new contri
 
 ---
 
-👉 **Next Step**: Mention **@firstcommit-mentor** to explore starting tasks:
-\`@firstcommit-mentor I am a beginner. Give me one simple task to get started with this project.\``;
+👉 **Next Step**: When you are ready, ask FirstCommit Mentor for beginner tasks:
+*(e.g. reply with: "I am a beginner. Give me one simple task to get started with this project.")*`;
         }
       } else {
         // Standard inspect flow
@@ -500,8 +528,8 @@ ${issueListText}
 
 ---
 
-👉 **Next Step**: Mention **@firstcommit-mentor** to explain the repository and begin your contribution journey:
-\`@firstcommit-mentor Explain what this repository does and how I can start contributing.\``;
+👉 **Next Step**: When you are ready, ask FirstCommit Mentor for guidance:
+*(e.g. reply with: "Explain what this repository does and how I can start contributing.")*`;
           }
         } catch (e) {
           log(`Scout GitHub error: ${e.message}`);
@@ -517,8 +545,8 @@ ${issueListText}
 
 ---
 
-👉 **Next Step**: Mention **@firstcommit-mentor** to begin:
-\`@firstcommit-mentor Explain what this repository does and how I can start contributing.\``;
+👉 **Next Step**: When you are ready, ask FirstCommit Mentor for guidance:
+*(e.g. reply with: "Explain what this repository does and how I can start contributing.")*`;
         }
       }
 
@@ -627,6 +655,11 @@ You run on Meta Llama 3.3 70B. Explain git, GitHub, CI/CD, and open source conce
     // ==========================================
     if (isReviewerAddressed || isReviewRequest) {
       const state = sessionRepoState.get(roomId);
+      if (!hasActualDiffPatch && !state.lastDiff) {
+        const noDiffNotice = `### 🔍 FirstCommit Reviewer (Claude Haiku 4.5)\n\nI am ready to review your code! Please paste your \`git diff\` or code patch here in the chat to begin review.`;
+        if (roomId) await postToSwitchRoom(roomId, messageId, noDiffNotice);
+        return noDiffNotice;
+      }
       const diffToReview = hasActualDiffPatch ? userQuery : (state.lastDiff || userQuery);
       state.lastDiff = diffToReview;
       sessionRepoState.set(roomId, state);
@@ -711,7 +744,7 @@ Please review this code diff against the approved plan.`
 *Static text review only. Run your local test suite to verify.*`;
       }
 
-      reviewerResponse += `\n\n---\n\n👉 **Next Step**: When you are satisfied with this review and local tests pass, reply:\n\`@firstcommit-mentor draft PR\``;
+      reviewerResponse += `\n\n---\n\n👉 **Next Step**: When you are satisfied with this review and local tests pass, reply with: \`draft PR\``;
 
       state.lastReview = reviewerResponse;
       sessionRepoState.set(roomId, state);
@@ -791,8 +824,9 @@ Stage 1: Welcome, Issue Recommendations & 4-Step Action Plan (GATE 1)
   - Step 4: Code Review & Pull Request Submission
 - MANDATORY GATE 1: Ask contributor to approve the plan:
   "👉 **GATE 1: Human Plan Approval**
-  To confirm you want to proceed with this plan, please reply:
-  \`@firstcommit-mentor approve plan\`"
+  To confirm you want to proceed with this plan, please reply with:
+  \`approve plan\`"
+4. ANTI-LOOP: Never include @firstcommit mentions in suggestions. Ask the contributor to reply with plain text commands like 'approve plan' or 'draft PR'.
 
 Stage 2: Guidance & Setup (When contributor approves plan)
 - Celebrate the approval!
@@ -932,8 +966,8 @@ Welcome! Here is one simple, high-impact task to get started immediately:
 3. **Run Unit Tests**:
    Execute \`pytest tests/\` to verify existing tests pass on your machine.
 
-Once your tests run cleanly, reply:
-\`@firstcommit-mentor approve plan\` to generate your full step-by-step contribution plan!`;
+Once your tests run cleanly, reply with:
+\`approve plan\` to generate your full step-by-step contribution plan!`;
       } else {
         aiResponse = `### 👋 Welcome to ${currentRepo.owner}/${currentRepo.repo}!
 
@@ -958,8 +992,8 @@ I'm **FirstCommit Mentor**, your open-source onboarding guide in Mattermost conn
 ---
 
 👉 **GATE 1: Human Plan Approval**
-To confirm you want to proceed with this plan, please reply:
-\`@firstcommit-mentor approve plan\``;
+To confirm you want to proceed with this plan, please reply with:
+\`approve plan\``;
       }
     }
 
@@ -1079,6 +1113,16 @@ rl.on('line', async (line) => {
 
       // Process prompt & post to Switch Mattermost
       const reply = await processUserPrompt(fullPromptText);
+      if (!reply) {
+        log(`No reply generated or prompt dropped by anti-loop guard.`);
+        const response = {
+          jsonrpc: '2.0',
+          id: id,
+          result: { stopReason: 'end_turn' }
+        };
+        process.stdout.write(JSON.stringify(response) + '\n');
+        return;
+      }
 
       // Stream chunks via session/update notifications
       const chunkSize = 40;
