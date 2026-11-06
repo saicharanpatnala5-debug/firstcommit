@@ -200,6 +200,9 @@ npm run test:smoke
 
 # 4. Run Safety Proof Tests (prompt injection, zero-write validation, secrets scan)
 npm run test:safety
+
+# 5. Run 9-Scenario End-to-End Workflow Verification Suite (TC-01 through TC-09, stack detection, static security review)
+npm run test:workflow
 ```
 *Expected Result:* All test suites and health diagnostics exit with code 0 (`PASS`).
 
@@ -313,7 +316,7 @@ npm run doctor
 Switch is the central architectural pillar. Switch coordinates the real-time collaboration between the human contributor and the AI mentor across Mattermost. Without Switch's agent controller, room bridging, and relay API, FirstCommit cannot operate.
 
 ### 2. Technical Execution (25%)
-- Fully tested TypeScript codebase with 10 unit tests, live smoke tests, and prompt injection safety suites.
+- Fully tested codebase with 12 unit tests, 22-scenario automated workflow verification suite (TC-01 through TC-09), live smoke tests, and prompt injection safety suites.
 - Production-ready Docker + Switch Console local setup reproducible in under 10 minutes.
 - Clean separation between presentation (Mattermost), orchestration (Switch), cognition (Gemini), and data (GitHub MCP).
 
