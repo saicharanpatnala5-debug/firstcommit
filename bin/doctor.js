@@ -136,12 +136,14 @@ async function checkSwitchApi() {
     }
   }
 
-  const envPath = path.join(process.env.APPDATA || '', 'switchdash', 'local-switch-server', 'native', 'run', 'switch-core.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const m = envContent.match(/SERVER_PORT=(\d+)/);
-    if (m && m[1]) {
-      endpoint = `http://127.0.0.1:${m[1]}`;
+  if (!endpoint) {
+    const envPath = path.join(process.env.APPDATA || '', 'switchdash', 'local-switch-server', 'native', 'run', 'switch-core.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const m = envContent.match(/SERVER_PORT=(\d+)/);
+      if (m && m[1]) {
+        endpoint = `http://127.0.0.1:${m[1]}`;
+      }
     }
   }
 
