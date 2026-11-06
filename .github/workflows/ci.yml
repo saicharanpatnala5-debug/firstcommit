@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install dependencies & build MCP server
+        run: |
+          cd mcp-server
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Run Unit Tests
+        run: npm test
+
+      - name: Run Safety Proofs & Verification
+        run: npm run test:safety

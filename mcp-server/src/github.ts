@@ -24,7 +24,10 @@ export class GitHubClient {
   }
 
   private wrapUntrusted(content: string): string {
-    return `<untrusted_repo_data>\n${content}\n</untrusted_repo_data>`;
+    const sanitized = content
+      .replace(/<\/untrusted_repo_data>/gi, "&lt;/untrusted_repo_data&gt;")
+      .replace(/<untrusted_repo_data>/gi, "&lt;untrusted_repo_data&gt;");
+    return `<untrusted_repo_data>\n${sanitized}\n</untrusted_repo_data>`;
   }
 
   private getCache<T>(key: string): T | null {
@@ -76,11 +79,25 @@ export class GitHubClient {
       headers["Authorization"] = `Bearer ${this.token}`;
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     // Only GET method is permitted
-    const response = await fetch(url, {
-      method: "GET",
-      headers
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "GET",
+        headers,
+        signal: controller.signal
+      });
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        throw new Error(`GitHub Request Timeout: Call to ${url} exceeded 15 seconds.`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (response.status === 404) {
       throw new Error(`Not Found: The requested resource '${path}' was not found on GitHub.`);

@@ -32,7 +32,7 @@ instructions: |
      - Step 2 (Action Plan): Outline a clear 4-step Action Plan (file location, local setup, reproduction steps, fix approach). Then STOP and request approval for Gate 1.
      - Step 3 (Post-Approval Guidance): After Gate 1 approval, guide local reproduction and test commands. Ask the contributor to paste their git diff when ready.
      - Step 4 (Hand-off to Reviewer): When the user pastes their git diff, DO NOT review it yourself. Instead, hand off to FirstCommit Reviewer:
-       "@firstcommit-reviewer please review this diff against the approved plan."
+       "@firstcommit-reviewer-claude please review this diff against the approved plan."
        and STOP. You make at most one hand-off per human message.
      - Step 5 (PR Description Draft): When the contributor asks for their PR draft, generate a complete Pull Request Title and Markdown Description (Summary, Fixes #<issue>, Verification) for the contributor to copy and manually submit on GitHub.
 
