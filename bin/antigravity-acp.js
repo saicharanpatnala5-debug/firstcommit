@@ -26,9 +26,25 @@ log(`Antigravity ACP process started (PID: ${process.pid}, Args: ${process.argv.
 // GitHub Client
 let gitHubClient = null;
 try {
-  const { GitHubClient } = require('C:/Users/SAI CHARAN/Projects/FirstCommit/mcp-server/dist/github.js');
-  gitHubClient = new GitHubClient();
-  log('GitHubClient initialized successfully');
+  const projectRoot = path.resolve(__dirname, '..');
+  const possiblePaths = [
+    path.join(projectRoot, 'mcp-server', 'dist', 'github.js'),
+    path.join(process.cwd(), 'mcp-server', 'dist', 'github.js'),
+    path.join(process.env.USERPROFILE || '', 'Projects', 'FirstCommit', 'mcp-server', 'dist', 'github.js')
+  ];
+  let githubModule = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      githubModule = require(p);
+      break;
+    }
+  }
+  if (githubModule && githubModule.GitHubClient) {
+    gitHubClient = new githubModule.GitHubClient();
+    log('GitHubClient initialized successfully');
+  } else {
+    log('GitHubClient module not found in candidate paths');
+  }
 } catch (e) {
   log(`Failed to load GitHubClient: ${e.message}`);
 }
@@ -36,10 +52,12 @@ try {
 // Load OPENROUTER_API_KEY from environment or local gitignored .env file
 let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 if (!OPENROUTER_API_KEY) {
+  const projectRoot = path.resolve(__dirname, '..');
   const possibleEnvPaths = [
-    path.join('C:', 'Users', 'SAI CHARAN', 'Projects', 'FirstCommit', '.env'),
+    path.join(projectRoot, '.env'),
     path.join(process.cwd(), '.env'),
-    path.join(__dirname, '..', '.env')
+    path.join(__dirname, '..', '.env'),
+    path.join(process.env.USERPROFILE || '', 'Projects', 'FirstCommit', '.env')
   ];
   for (const envPath of possibleEnvPaths) {
     if (fs.existsSync(envPath)) {
@@ -250,7 +268,8 @@ function extractRoomAndMessageId(promptText) {
 
 async function processUserPrompt(promptText) {
   const { roomId, messageId } = extractRoomAndMessageId(promptText);
-  const rawUserQuery = extractUserQuery(promptText);
+  try {
+    const rawUserQuery = extractUserQuery(promptText);
 
   // Check if addressed to specific persona
   const isScoutAddressed = /@firstcommit-scout\b/i.test(promptText) ||
@@ -842,6 +861,14 @@ To confirm you want to proceed with this plan, please reply:
   }
 
   return aiResponse;
+  } catch (fatalErr) {
+    log(`Fatal error processing prompt: ${fatalErr.message}\n${fatalErr.stack}`);
+    if (roomId) {
+      const errNotice = `⚠️ **FirstCommit Notice**: I ran into a temporary issue while processing your message: \`${fatalErr.message}\`. You can continue locally or run \`npm run doctor\` to check stack health.`;
+      await postToSwitchRoom(roomId, messageId, errNotice);
+    }
+    return `⚠️ Error: ${fatalErr.message}`;
+  }
 }
 
 // JSON-RPC stdio server for Switch Agent Controller

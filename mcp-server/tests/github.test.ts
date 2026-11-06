@@ -167,6 +167,56 @@ test("GitHubClient - Unit Tests with Mocked Responses", async (t) => {
     assert.equal(callCount, 1);
   });
 
+  await t.test("Tool 5b: getOpenIssues scores and prioritizes beginner-friendly uncontested issues", async () => {
+    const mockIssues = [
+      { number: 10, title: "Hard kernel bug", state: "open", labels: ["kernel"], comments: 12, assignee: { login: "someone" } },
+      { number: 11, title: "Fix typo in docs", state: "open", labels: ["good first issue", "docs"], comments: 0 }
+    ];
+
+    globalThis.fetch = async () => {
+      return new Response(JSON.stringify(mockIssues), { status: 200 });
+    };
+
+    const client = new GitHubClient();
+    const issues = await client.getOpenIssues("testowner", "testrepo");
+
+    assert.equal(issues.length, 2);
+    // Issue 11 has good first issue + docs + 0 comments, so it must be ranked #1
+    assert.equal(issues[0].number, 11);
+    assert.equal(issues[0].is_claimed, false);
+    assert.ok((issues[0].score || 0) > (issues[1].score || 0));
+    assert.equal(issues[1].is_claimed, true);
+  });
+
+  await t.test("Tool 7: getContributionReadiness identifies contributing guide and license", async () => {
+    globalThis.fetch = async (url: any) => {
+      const u = String(url);
+      if (u.includes("/repos/testowner/testrepo/git/trees")) {
+        return new Response(JSON.stringify({
+          tree: [
+            { path: "README.md", type: "blob" },
+            { path: "CONTRIBUTING.md", type: "blob" },
+            { path: "CODE_OF_CONDUCT.md", type: "blob" }
+          ]
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        owner: { login: "testowner" },
+        name: "testrepo",
+        default_branch: "main",
+        license: { name: "MIT License" }
+      }), { status: 200 });
+    };
+
+    const client = new GitHubClient();
+    const readiness = await client.getContributionReadiness("testowner", "testrepo");
+
+    assert.equal(readiness.hasContributingGuide, true);
+    assert.equal(readiness.hasLicense, true);
+    assert.equal(readiness.hasCodeOfConduct, true);
+    assert.equal(readiness.licenseName, "MIT License");
+  });
+
   await t.test("Security: Blocks non-api.github.com destinations", async () => {
     const client = new GitHubClient();
     // Private method test via injection

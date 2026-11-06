@@ -177,7 +177,7 @@ export class GitHubClient {
     };
   }
 
-  // Tool 5: Open Issues with Label Filter
+  // Tool 5: Open Issues with Deterministic Beginner Scoring & Claim Detection
   public async getOpenIssues(owner: string, repo: string, labels?: string[]): Promise<IssueSummary[]> {
     let path = `/repos/${owner}/${repo}/issues?state=open&per_page=25`;
     if (labels && labels.length > 0) {
@@ -189,16 +189,46 @@ export class GitHubClient {
     // Filter out pull requests (GitHub API returns PRs in issues endpoint)
     const issuesOnly = (data || []).filter((item: any) => !item.pull_request);
 
-    return issuesOnly.slice(0, 10).map((item: any) => ({
-      number: item.number,
-      title: item.title,
-      url: item.html_url,
-      state: item.state,
-      labels: (item.labels || []).map((l: any) => typeof l === "string" ? l : l.name),
-      author: item.user?.login || "unknown",
-      comments_count: item.comments,
-      created_at: item.created_at
-    }));
+    const scoredIssues = issuesOnly.map((item: any) => {
+      const itemLabels = (item.labels || []).map((l: any) => typeof l === "string" ? l : l.name);
+      const isClaimed = Boolean(item.assignee || (item.assignees && item.assignees.length > 0));
+
+      // Deterministic Scoring for beginner suitability
+      let score = 50;
+      const lowerLabels = itemLabels.map((l: string) => l.toLowerCase());
+      if (lowerLabels.some((l: string) => l.includes("good first issue") || l.includes("beginner") || l.includes("starter") || l.includes("easy"))) {
+        score += 30;
+      }
+      if (lowerLabels.some((l: string) => l.includes("help wanted") || l.includes("documentation") || l.includes("docs"))) {
+        score += 15;
+      }
+      if (isClaimed) {
+        score -= 25; // Deprioritize already claimed issues
+      }
+      if (item.comments === 0) {
+        score += 5; // Uncontested
+      } else if (item.comments > 10) {
+        score -= 10; // High contention
+      }
+
+      return {
+        number: item.number,
+        title: item.title,
+        url: item.html_url,
+        state: item.state,
+        labels: itemLabels,
+        author: item.user?.login || "unknown",
+        comments_count: item.comments || 0,
+        created_at: item.created_at,
+        is_claimed: isClaimed,
+        score
+      };
+    });
+
+    // Sort by deterministic score descending
+    scoredIssues.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+
+    return scoredIssues.slice(0, 10);
   }
 
   // Tool 6: One Issue + Comments
@@ -228,6 +258,32 @@ export class GitHubClient {
       labels: (issue.labels || []).map((l: any) => typeof l === "string" ? l : l.name),
       body: this.wrapUntrusted(bodyTruncated),
       comments
+    };
+  }
+
+  // Tool 7: Contribution Readiness Check
+  public async getContributionReadiness(owner: string, repo: string): Promise<{
+    hasContributingGuide: boolean;
+    hasLicense: boolean;
+    hasCodeOfConduct: boolean;
+    licenseName: string | null;
+  }> {
+    const overview = await this.getRepoOverview(owner, repo);
+    let hasContributingGuide = false;
+    let hasCodeOfConduct = false;
+
+    try {
+      const tree = await this.getFileTree(owner, repo);
+      const paths = tree.tree.map(t => t.path.toLowerCase());
+      hasContributingGuide = paths.some(p => p.includes("contributing"));
+      hasCodeOfConduct = paths.some(p => p.includes("code_of_conduct") || p.includes("conduct"));
+    } catch (e) {}
+
+    return {
+      hasContributingGuide,
+      hasLicense: Boolean(overview.license),
+      hasCodeOfConduct,
+      licenseName: overview.license
     };
   }
 }

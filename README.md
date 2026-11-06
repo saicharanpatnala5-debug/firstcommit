@@ -187,18 +187,21 @@ npm run build
 ```
 *Expected Result:* Dependencies install cleanly and `dist/index.js` + `dist/github.js` are created without TypeScript errors.
 
-#### 2. Run Automated Verification Tests
+#### 2. Run Automated Verification Tests & System Doctor
 ```powershell
-# 1. Run Unit Tests (10/10 tests passing with mocked responses)
+# 1. Run System Health & Stack Doctor (verifies Docker, Postgres, Mattermost, Switch, ACP, and GitHub)
+npm run doctor
+
+# 2. Run Unit Tests (12/12 tests passing with mocked responses, deterministic scoring & readiness)
 npm test
 
-# 2. Run Live Smoke Test (fetches real public repo metadata from sandbox-quantum/switch)
+# 3. Run Live Smoke Test (fetches real public repo metadata from sandbox-quantum/switch)
 npm run test:smoke
 
-# 3. Run Safety Proof Tests (prompt injection, zero-write validation, secrets scan)
+# 4. Run Safety Proof Tests (prompt injection, zero-write validation, secrets scan)
 npm run test:safety
 ```
-*Expected Result:* All test suites exit with code 0 (`PASS`).
+*Expected Result:* All test suites and health diagnostics exit with code 0 (`PASS`).
 
 #### 3. Environment Configuration
 Copy the `.env.example` file:
@@ -263,10 +266,17 @@ cp .env.example .env
 
 ---
 
-### Troubleshooting We Hit and Resolved
+### Troubleshooting & Stack Diagnostics
+
+Run the automated doctor command anytime to instantly isolate issues across your Docker stack, PostgreSQL, Mattermost, Switch Server, ACP processes, and GitHub API reachability:
+
+```powershell
+npm run doctor
+```
 
 | Problem Hit | Root Cause | Solution Applied |
 | :--- | :--- | :--- |
+| **Agent stopped responding after machine sleep / reboot** | Native PostgreSQL or Docker container stopped when OS suspended. | Run `npm run doctor`. If Postgres is down, start it via `pg_ctl start`. If Mattermost is down, run `docker compose -f mattermost-compose.yml up -d`. |
 | **Switch Console showed Antigravity as "Not installed"** | Windows GUI processes do not inherit environment variable changes from existing terminal sessions. | Completely quit Switch Console from system tray/taskbar and relaunch it after adding `agy` to User PATH. |
 | **Bot replied `**Worked for Xs.**` with no text** | The session turn completion card was updating, but room messages in Switch must be dispatched via `post_message`. | Configured the ACP adapter to invoke Switch's embedded Relay API (`POST /agents/{agentId}/ops/post_message`) with the active room placement session header `x-switch-session-id`. |
 | **`thread_id not found in room` error** | Attempting to reply to an unindexed message ID. | Added automatic fallback in `antigravity-acp.js` to post as a top-level channel message if thread normalization fails. |

@@ -1,0 +1,22 @@
+{
+  "name": "firstcommit",
+  "version": "1.0.0",
+  "description": "Empathetic Open-Source Contributor Onboarding inside Team Chat, Powered by Switch & Google Gemini",
+  "private": true,
+  "scripts": {
+    "doctor": "node bin/doctor.js",
+    "test": "npm test --prefix mcp-server",
+    "test:safety": "npm run test:safety --prefix mcp-server",
+    "test:smoke": "npm run test:smoke --prefix mcp-server",
+    "build": "npm run build --prefix mcp-server"
+  },
+  "keywords": [
+    "switch",
+    "mattermost",
+    "gemini",
+    "hackathon",
+    "firstcommit"
+  ],
+  "author": "Sai Charan",
+  "license": "MIT"
+}

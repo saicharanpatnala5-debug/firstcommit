@@ -50,6 +50,15 @@ export interface IssueSummary {
   author: string;
   comments_count: number;
   created_at: string;
+  is_claimed?: boolean;
+  score?: number;
+}
+
+export interface ContributionReadiness {
+  hasContributingGuide: boolean;
+  hasLicense: boolean;
+  hasCodeOfConduct: boolean;
+  licenseName: string | null;
 }
 
 export interface IssueDetailResult {
