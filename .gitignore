@@ -15,8 +15,9 @@ scratch/
 *.xml
 *.py
 
-# Video recordings (do not commit)
+# Video recordings (do not commit unmanaged local recordings)
 *.mp4
+!docs/demo/*.mp4
 *.mov
 *.webm
 *.mkv

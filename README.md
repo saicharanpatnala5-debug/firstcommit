@@ -13,7 +13,7 @@
 
 **FirstCommit** solves the "first contribution cliff": over 70% of aspiring open-source contributors abandon their first pull request due to daunting codebases, cryptic setup steps, and fear of negative feedback, while maintainers suffer burnout triaging low-quality PRs. FirstCommit pairs beginners with an encouraging, step-by-step AI onboarding mentor right inside their team chat (Mattermost via Switch). The mentor queries live GitHub data, recommends tailored beginner issues, formulates actionable plans through explicit human approval gates, reviews code diffs, and drafts clean PR descriptions.
 
-- **Demo Video (3–5 min):** [Watch FirstCommit Demo Video on YouTube / Loom](https://youtu.be/placeholder-demo-video) *(Replace with recorded video link)*
+- **Demo Video (3–5 min):** [Watch FirstCommit Demo Video (MP4)](docs/demo/firstcommit-demo.mp4)
 - **FirstCommit Room in Action:**
 
 ![FirstCommit Room in Action](docs/img/room-in-action.png)
