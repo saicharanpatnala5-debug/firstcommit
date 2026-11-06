@@ -136,6 +136,15 @@ async function checkSwitchApi() {
     }
   }
 
+  const envPath = path.join(process.env.APPDATA || '', 'switchdash', 'local-switch-server', 'native', 'run', 'switch-core.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const m = envContent.match(/SERVER_PORT=(\d+)/);
+    if (m && m[1]) {
+      endpoint = `http://127.0.0.1:${m[1]}`;
+    }
+  }
+
   if (!token) return { pass: false, detail: 'Switch API token not found' };
 
   try {
@@ -155,6 +164,9 @@ async function checkSwitchApi() {
       return { pass: true, detail: 'Switch API bridge connected to room successfully' };
     }
     const errText = await res.text();
+    if (res.status === 409 && errText.includes('managed_by_controller')) {
+      return { pass: true, detail: 'Switch API active (agent managed by controller)' };
+    }
     return { pass: false, detail: `Switch API error ${res.status}: ${errText.slice(0, 80)}` };
   } catch (e) {
     return { pass: false, detail: `Switch API unreachable (${e.message})` };

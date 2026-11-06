@@ -80,7 +80,7 @@ if (!OPENROUTER_API_KEY) {
 // Find Switch credentials and placements dynamically by room
 function getSwitchConfig(targetRoomId) {
   const effectiveRoomId = targetRoomId || 'cce26d68-29c4-4c6c-9702-6b42f3ed5f61';
-  let endpoint = process.env.SWITCH_API_ENDPOINT || 'http://127.0.0.1:63242';
+  let endpoint = process.env.SWITCH_API_ENDPOINT || 'http://127.0.0.1:52778';
   let token = process.env.SWITCH_API_TOKEN || '';
   let agentId = process.env.SWITCH_AGENT_ID || '';
   let sessionId = null;
@@ -93,8 +93,11 @@ function getSwitchConfig(targetRoomId) {
         const fullServer = path.join(switchdashBase, sDir);
         const watchersDir = path.join(fullServer, 'watchers');
         if (fs.existsSync(watchersDir)) {
-          // Look for watchers matching our room
+          // Look for watchers matching our room (and agent if specified)
           for (const aDir of fs.readdirSync(watchersDir)) {
+            if (process.env.SWITCH_AGENT_ID && aDir !== process.env.SWITCH_AGENT_ID) {
+              continue;
+            }
             const placePath = path.join(watchersDir, aDir, 'placements.json');
             if (fs.existsSync(placePath)) {
               try {
