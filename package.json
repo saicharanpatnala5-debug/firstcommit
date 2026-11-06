@@ -6,6 +6,7 @@
   "scripts": {
     "doctor": "node bin/doctor.js",
     "test": "npm test --prefix mcp-server",
+    "test:workflow": "node tests/e2e-workflow-nine-scenarios.test.js",
     "test:safety": "npm run test:safety --prefix mcp-server",
     "test:smoke": "npm run test:smoke --prefix mcp-server",
     "build": "npm run build --prefix mcp-server"
